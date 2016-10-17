@@ -37,11 +37,11 @@ int main()
 
                 // write the terminal flag
                 size_t ret = fwrite(flag,1,4,ptr_myfile);
-                printf("count = %d : ret = %d\n",count++,(int)((ssize_t)ret));
+//              printf("count = %d : ret = %d\n",count++,(int)((ssize_t)ret));
 
                 // write a space
                 ret = fwrite(space257,1,4,ptr_myfile);
-                printf("count = %d : ret = %d\n",count++,(int)((ssize_t)ret));
+//              printf("count = %d : ret = %d\n",count++,(int)((ssize_t)ret));
 
                 int i;
                 for (i=0; i<subSize; i++) {
@@ -51,23 +51,23 @@ int main()
                                 if (charInt >= (1<<(7-j))) {
                                         // write a pulse 1
                                         ret = fwrite(pulse771,1,4,ptr_myfile);
-                                        printf("count = %d : ret = %d\n",count++,(int)((ssize_t)ret));
+//                                      printf("count = %d : ret = %d\n",count++,(int)((ssize_t)ret));
                                         charInt = charInt - (1<<(7-j));
                                 } else {
                                         // write a pulse 0
                                         ret = fwrite(pulse257,1,4,ptr_myfile);
-                                        printf("count = %d : ret = %d\n",count++,(int)((ssize_t)ret));
+//                                      printf("count = %d : ret = %d\n",count++,(int)((ssize_t)ret));
                                 }
 
                                 // write a space
                                 ret = fwrite(space257,1,4,ptr_myfile);
-                                printf("count = %d : ret = %d\n",count++,(int)((ssize_t)ret));
+//                              printf("count = %d : ret = %d\n",count++,(int)((ssize_t)ret));
                         }
                 }
 
                 // write another terminal flag
                 ret = fwrite(flag,1,4,ptr_myfile);
-                printf("count = %d : ret = %d\n",count++,(int)((ssize_t)ret));
+//              printf("count = %d : ret = %d\n",count++,(int)((ssize_t)ret));
 
                 // write a space
 //                ret = fwrite(space257,1,4,ptr_myfile);
