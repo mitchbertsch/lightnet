@@ -5,7 +5,7 @@ int main()
 {
         char buffer[4];
         FILE *ptr_myfile;
-        char packet[] = "Hello World! I am your new overlord! These are random! Thanks to the changes that I just made, I am now able to send much larger packets.";
+        char packet[] = "This is the packet that will be sent in chunks of 63 bytes across the IR network to the target device. Thanks to the changes that I just made, I am now able to send much larger packets.";
         int packetIndex = 0;
         int count = 1;
 
