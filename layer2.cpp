@@ -78,8 +78,10 @@ int main() {
 					}
 					ofstream ofs;
 					ofs.open(outputQueue, ofstream::out | ofstream::app);
-					ofs << packet;
-					ofs.close();
+					if(!ofs.fail()) {
+						ofs << packet;
+						ofs.close();
+					}
 				}
 			}
 			else {
@@ -108,8 +110,10 @@ int main() {
 					}
 					ofstream ofs;
 					ofs.open(outputQueue, ofstream::out | ofstream::app);
-					ofs << packet;
-					ofs.close();
+					if(!ofs.fail()) {
+						ofs << packet;
+						ofs.close();
+					}
 				}
 			}
 		}
@@ -119,7 +123,7 @@ int main() {
 		//Read from TUN/TAP pipe, queue, etc.
 		ifstream ifs;
 		ifs.open(inputQueue, ifstream::in);
-		if(ifs.peek() != ifstream::traits_type::eof()) {
+		if(!ifs.fail() && ifs.peek() != ifstream::traits_type::eof()) {
 			char writePacket[256];
 			for(int i = 0; i < 256; i++) {
 				writePacket[i] = ifs.get();
@@ -140,7 +144,7 @@ int main() {
 				}
 			}
 			write(IRfd, flag, 4);
+			ifs.close();
 		}
-		ifs.close();
 	}
 }
