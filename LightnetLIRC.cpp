@@ -64,7 +64,7 @@ void LightnetLIRC::run() {
 					lirc_packet ir_tmp;
 					ir_tmp.length = 256; //problem
 					ir_tmp.type = DATA; //problem
-					strncpy(ir_tmp.buff,packet,ir_tmp.length);
+					memcpy(ir_tmp.buff,packet,ir_tmp.length);
 					lnet->push_lirc_rx(ir_tmp);
 				}
 			}
@@ -95,7 +95,7 @@ void LightnetLIRC::run() {
 					lirc_packet ir_tmp;
 					ir_tmp.length = 256; //problem
 					ir_tmp.type = DATA; //problem
-					strncpy(ir_tmp.buff,packet,ir_tmp.length);
+					memcpy(ir_tmp.buff,packet,ir_tmp.length);
 					lnet->push_lirc_rx(ir_tmp);
 				}
 			}

@@ -7,7 +7,7 @@ lirc_packet Lightnet::ether_to_lirc(ether_packet& erp) {
   lirc_packet irp;
   irp.buff[0]=erp.buff[9];//copy dst mac
   irp.buff[1]=erp.buff[15];//copy src mac
-  strncpy(irp.buff+2,erp.buff+16,erp.length-16);//copy ethertype & data & crc
+  memcpy(irp.buff+2,erp.buff+16,erp.length-16);//copy ethertype & data & crc
   irp.length = erp.length - 14;
   return irp;
 }
@@ -17,12 +17,12 @@ lirc_packet Lightnet::ether_to_lirc(ether_packet& erp) {
  **************************************************************************/
 ether_packet Lightnet::lirc_to_ether(lirc_packet& irp) {
   ether_packet erp;
-  strncpy(erp.buff,reinterpret_cast<const char*>(ether_flag),4);//add start flag
-  strncpy(erp.buff+4,reinterpret_cast<const char*>(ether_mac),5); //add dst mac
+  memcpy(erp.buff,ether_flag,4);//add start flag
+  memcpy(erp.buff+4,ether_mac,5); //add dst mac
   erp.buff[9] = irp.buff[0];
-  strncpy(erp.buff+10,reinterpret_cast<const char*>(ether_mac),5); //add src mac
+  memcpy(erp.buff+10,ether_mac,5); //add src mac
   erp.buff[15] = irp.buff[1];
-  strncpy(erp.buff+16,irp.buff+2,irp.length-2); //copy ethertype & data & crc
+  memcpy(erp.buff+16,irp.buff+2,irp.length-2); //copy ethertype & data & crc
   erp.length = irp.length + 14;
   return erp;
 }

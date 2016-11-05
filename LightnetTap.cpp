@@ -113,7 +113,7 @@ void LightnetTap::run() {
     if(nread > 0) {
 	  ether_packet tmp;
       tmp.length=nread;
-      strncpy(tmp.buff,buffer,nread);
+      memcpy(tmp.buff,buffer,nread);
 	  lnet->push_ether_rx(tmp);
 	  //cout << "`" << tmp.length << "\n";
     }
@@ -122,7 +122,7 @@ void LightnetTap::run() {
     while(!lnet->empty_ether_tx())
 	{
 	  ether_packet tmp = lnet->pop_ether_tx();
-	  strncpy(buffer,tmp.buff,tmp.length);
+	  memcpy(buffer,tmp.buff,tmp.length);
 	  nwrite = cwrite(tap_fd, buffer, tmp.length);
 	  //if(nwrite != tmp.length)
         
