@@ -107,7 +107,7 @@ void LightnetLIRC::run() {
 		
 		if(!lnet->empty_lirc_tx()) {
 			lirc_packet ir_tmp = lnet->pop_lirc_tx();
-			if(ir_tmp.length > 200) //problem
+			if(ir_tmp.length > 63) //problem
 				continue;
 			write(IRfd, flag, 4);
 			for(int i = 0; i < ir_tmp.length; i++) {

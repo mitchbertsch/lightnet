@@ -3,12 +3,13 @@
 /**************************************************************************
  * ether_to_ir: converts ether packet to lirc packet                                         *
  **************************************************************************/
-lirc_packet Lightnet::ether_to_ir(ether_packet& erp) {
+lirc_packet Lightnet::ether_to_lirc(ether_packet& erp) {
   lirc_packet irp;
   irp.buff[0]=erp.buff[9];//copy dst mac
   irp.buff[1]=erp.buff[15];//copy src mac
   strncpy(irp.buff+2,erp.buff+16,erp.length-16);//copy ethertype & data & crc
   irp.length = erp.length - 14;
+  return irp;
 }
 
 /**************************************************************************
@@ -23,6 +24,7 @@ ether_packet Lightnet::lirc_to_ether(lirc_packet& irp) {
   erp.buff[15] = irp.buff[1];
   strncpy(erp.buff+16,irp.buff+2,irp.length-2); //copy ethertype & data & crc
   erp.length = irp.length + 14;
+  return erp;
 }
 
 int Lightnet::ir_dst(lirc_packet& irp)
@@ -245,7 +247,7 @@ void Lightnet::run()
 	  ether_packet ether_tmp = pop_ether_rx();
 	  //cerr << "packet data = ";
 	  cerr << "~" << ether_tmp.length << "\n";
-	  push_lirc_tx(ether_to_ir(ether_tmp));
+	  push_lirc_tx(ether_to_lirc(ether_tmp));
 	}
 	
 	while(loop > 9 && !empty_lirc_pending())

@@ -91,7 +91,7 @@ class Lightnet
     priority_queue<lirc_packet> lirc_pending;
     priority_queue<ether_packet> ether_tx;
     priority_queue<ether_packet> ether_rx;
-    lirc_packet ether_to_ir(ether_packet& erp);
+    lirc_packet ether_to_lirc(ether_packet& erp);
     ether_packet lirc_to_ether(lirc_packet& irp);
 	int ether_crc(ether_packet& erp);
 	int ir_dst(lirc_packet& irp);
