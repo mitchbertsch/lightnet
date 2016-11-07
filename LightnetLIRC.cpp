@@ -12,7 +12,7 @@ int LightnetLIRC::getLength(char lbyte, char mbyte, char rbyte) {
 int LightnetLIRC::init(string LIRCpath)
 {
 	path = LIRCpath;
-  IRfd = open(LIRCpath.c_str(), O_RDWR | O_TRUNC);
+  //IRfd = open(LIRCpath.c_str(), O_RDWR | O_TRUNC);
   if(IRfd < 0){
     perror("Opening LIRC interface");
 	return IRfd;
@@ -28,7 +28,7 @@ void LightnetLIRC::run() {
 	cerr << "lirc start\n";
 	char subPacket[SUBBUFSIZE];
 	while(1) {
-		this->init(path);
+		IRfd = open(path.c_str(), O_RDWR | O_TRUNC);
 		int IRreturn;
 		
 		IRreturn = select(IRfd + 1, &IRfds, NULL, NULL, &IRtv);
@@ -89,12 +89,12 @@ void LightnetLIRC::run() {
 		if(!lnet->empty_lirc_tx()) {
 			lirc_packet ir_tmp = lnet->pop_lirc_tx();
 			int packetIndex = 0;
-			this->init(path);
+			IRfd = open(path.c_str(), O_RDWR | O_TRUNC);
 			write(IRfd, flag, 4);//write flag
 			write(IRfd, pulse257, 4);
 			close(IRfd);
 			while(packetIndex < ir_tmp.length) {
-				this->init(path);
+				IRfd = open(path.c_str(), O_RDWR | O_TRUNC);
 				int subSize = SUBBUFSIZE;
 				
               			 if (ir_tmp.length - packetIndex < SUBBUFSIZE)
@@ -117,7 +117,7 @@ void LightnetLIRC::run() {
 				packetIndex+=subSize;
 				close(IRfd);
 			}
-			this->init(path);
+			IRfd = open(path.c_str(), O_RDWR | O_TRUNC);
 			write(IRfd, flag, 4);
 			close(IRfd);
 			gettimeofday(&(ir_tmp.sent), NULL); 
