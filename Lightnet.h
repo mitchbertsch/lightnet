@@ -27,6 +27,7 @@ using namespace std;
 
 /* buffer for reading from tun/tap interface, must be >= 1500 */
 #define BUFSIZE 2000
+#define SUBBUFSIZE 63
 #define MAX_THREADS 4 
 
 class Lightnet;

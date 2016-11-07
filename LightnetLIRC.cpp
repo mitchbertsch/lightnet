@@ -25,6 +25,7 @@ int LightnetLIRC::init(string LIRCpath)
 
 void LightnetLIRC::run() {
 	cerr << "lirc start\n";
+	char subPacket[SUBBUFSIZE];
 	while(1) {
 		int IRreturn;
 		
@@ -107,22 +108,30 @@ void LightnetLIRC::run() {
 		
 		if(!lnet->empty_lirc_tx()) {
 			lirc_packet ir_tmp = lnet->pop_lirc_tx();
-			if(ir_tmp.length > 63) //problem
-				continue;
-			write(IRfd, flag, 4);
-			for(int i = 0; i < ir_tmp.length; i++) {
-				int charInt = ir_tmp.buff[i];
-				for(int j = 0; j < 8; j++) {
-					if (charInt >= (1 << (7 - j))) {
-						//Write 1.
-						write(IRfd, pulse771, 4);
-						charInt = charInt - ( 1 << (7 - j));
-					}
-					else {
-						//Write 0;
-						write(IRfd, pulse257, 4);
+			int packetIndex = 0;
+			write(IRfd, flag, 4);//write flag
+			write(IRfd, pulse257, 4);
+			while(packetIndex < ir_tmp.length) {
+				int subSize = SUBBUFSIZE;
+				
+                if (ir_tmp.length - packetIndex < SUBBUFSIZE)
+					subSize = SUBBUFSIZE - packetIndex;
+					
+				for(int i = 0; i < subSize; i++) {
+					int charInt = ir_tmp.buff[i+packetIndex];
+					for(int j = 0; j < 8; j++) {
+						if (charInt >= (1 << (7 - j))) {
+							//Write 1.
+							write(IRfd, pulse771, 4);
+							charInt = charInt - ( 1 << (7 - j));
+						}
+						else {
+							//Write 0;
+							write(IRfd, pulse257, 4);
+						}
 					}
 				}
+				packetIndex+=subSize;
 			}
 			write(IRfd, flag, 4);
 			gettimeofday(&(ir_tmp.sent), NULL); 
