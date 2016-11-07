@@ -128,5 +128,6 @@ void LightnetTap::run() {
         
 	  
 	}
+    pthread_yield();
   }
 }

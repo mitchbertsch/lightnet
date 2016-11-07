@@ -250,7 +250,7 @@ void Lightnet::run()
 	  push_lirc_tx(ether_to_lirc(ether_tmp));
 	}
 	
-	while(loop > 9 && !empty_lirc_pending())
+	while(loop > 9 && !empty_lirc_pending())//1Hz
 	{
 	  lirc_packet ir_tmp = pop_lirc_pending();
 	  struct timeval current;
@@ -261,7 +261,7 @@ void Lightnet::run()
 	    push_lirc_pending(ir_tmp);
 	}
 	
-	usleep(100000);
+	usleep(100000);//force thread to run at 10Hz
 	if(loop > 9)
 	  loop = 0;
   }
