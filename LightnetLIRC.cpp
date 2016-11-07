@@ -11,6 +11,7 @@ int LightnetLIRC::getLength(char lbyte, char mbyte, char rbyte) {
 
 int LightnetLIRC::init(string LIRCpath)
 {
+	path = LIRCpath;
   IRfd = open(LIRCpath.c_str(), O_RDWR | O_TRUNC);
   if(IRfd < 0){
     perror("Opening LIRC interface");
@@ -27,6 +28,7 @@ void LightnetLIRC::run() {
 	cerr << "lirc start\n";
 	char subPacket[SUBBUFSIZE];
 	while(1) {
+		this->init(path);
 		int IRreturn;
 		
 		IRreturn = select(IRfd + 1, &IRfds, NULL, NULL, &IRtv);
@@ -38,18 +40,20 @@ void LightnetLIRC::run() {
 			read(IRfd, checkPacket[0], 4);
 			read(IRfd, checkPacket[1], 4);
 
-			if(checkPacket[0][3] == 1) {
-				//The first one is a pulse
+			if(checkPacket[1][3] == 1) {
+				//The second one is a pulse
 				int pulseTime = getLength(checkPacket[0][0], checkPacket[0][1], checkPacket[0][2]);
 				if (pulseTime >= 900 && pulseTime <= 1100) {
-					char packet[256];
-					for (int i = 0; i < 256; i++) {
+					vector<char> packet(BUFSIZE);
+					char bit[4];
+					read(IRfd, bit, 4); //And this one ought to be a space.
+					read(IRfd, bit, 4);
+					int length = getLength(bit[0], bit[1], bit[2]);
+					while (!(length >= 900 && length <= 1100)) {
+						int i = 0;
 						int byteInt = 0;
 						for(int j = 0; j < 8; j++) {
 							byteInt *= 2;
-							char bit[4];
-							read(IRfd, bit, 4); //And this one ought to be a pulse.
-							int length = getLength(bit[0], bit[1], bit[2]);
 							if(length >= 671 && length <= 871) { //This is a one.
 								byteInt++;
 							}
@@ -57,64 +61,43 @@ void LightnetLIRC::run() {
 								//Do nothing
 							}
 							else cout << "ERROR ERROR" << endl;
-							read(IRfd, bit, 4); //This should be a space.
 						}
-						packet[i] = byteInt;
+						packet[i] = (char)byteInt;
 						byteInt = 0;
+						read(IRfd, bit, 4); //And this one ought to be a space.
+						read(IRfd, bit, 4); //This one should be a pulse;
+						length = getLength(bit[0], bit[1], bit[2]);
+						i++;
 					}
 					lirc_packet ir_tmp;
-					ir_tmp.length = 256; //problem
-					ir_tmp.type = DATA; //problem
-					memcpy(ir_tmp.buff,packet,ir_tmp.length);
+					ir_tmp.length = packet.size();
+					ir_tmp.type = (packet.size() <= 4) ? ACK : DATA;
+					memcpy(ir_tmp.buff,packet.data(),ir_tmp.length);
 					lnet->push_lirc_rx(ir_tmp);
 				}
 			}
 			else {
-				//The second one must be a pulse
-				int pulseTime = getLength(checkPacket[1][0], checkPacket[1][1], checkPacket[1][2]);
-				if (pulseTime >= 900 && pulseTime <= 1100) {
-					char packet[256];
-					for (int i = 0; i < 256; i++) {
-						int byteInt = 0;
-						for(int j = 0; j < 8; j++) {
-							byteInt *= 2;
-							char bit[4];
-							read(IRfd, bit, 4); //This one should be a space.
-							read(IRfd, bit, 4); //This one ought to be a pulse.
-							int length = getLength(bit[0], bit[1], bit[2]);
-							if(length >= 671 && length <= 871) { //This is a one.
-								byteInt++;
-							}
-							else if(length >= 157 && length <= 357) { //This is a zero
-								//Do nothing
-							}
-							else { cout << "ERROR ERROR" << endl; }
-						}
-						packet[i] = byteInt;
-						byteInt = 0;
-					}
-					lirc_packet ir_tmp;
-					ir_tmp.length = 256; //problem
-					ir_tmp.type = DATA; //problem
-					memcpy(ir_tmp.buff,packet,ir_tmp.length);
-					lnet->push_lirc_rx(ir_tmp);
-				}
+				//The second one is not a pulse. This is a problem....
+				cerr << "Pulse detection failed" << endl;
 			}
 		}
 		else {
 			//cout << "No data for 5 microseconds" << endl;
 		}
 		//Read from TUN/TAP pipe, queue, etc.
-		
+		close(IRfd);
 		if(!lnet->empty_lirc_tx()) {
 			lirc_packet ir_tmp = lnet->pop_lirc_tx();
 			int packetIndex = 0;
+			this->init(path);
 			write(IRfd, flag, 4);//write flag
 			write(IRfd, pulse257, 4);
+			close(IRfd);
 			while(packetIndex < ir_tmp.length) {
+				this->init(path);
 				int subSize = SUBBUFSIZE;
 				
-                if (ir_tmp.length - packetIndex < SUBBUFSIZE)
+              			 if (ir_tmp.length - packetIndex < SUBBUFSIZE)
 					subSize = SUBBUFSIZE - packetIndex;
 					
 				for(int i = 0; i < subSize; i++) {
@@ -132,8 +115,11 @@ void LightnetLIRC::run() {
 					}
 				}
 				packetIndex+=subSize;
+				close(IRfd);
 			}
+			this->init(path);
 			write(IRfd, flag, 4);
+			close(IRfd);
 			gettimeofday(&(ir_tmp.sent), NULL); 
 			if(ir_tmp.type == DATA)
 				lnet->push_lirc_pending(ir_tmp);

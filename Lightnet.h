@@ -135,6 +135,7 @@ class LightnetLIRC
 	const char unsigned flag[4] = {0xe8, 0x03, 0x00, 0x00};
   private:
     int IRfd;
+	string path;
 	Lightnet* lnet;
 	struct timeval IRtv; 
 	fd_set IRfds;
