@@ -18,7 +18,7 @@ int main()
         const char unsigned space257[4] = {0x01, 0x01, 0x00, 0x00};
         const char unsigned flag[4] = {0x01, 0x10, 0x00, 0x00};
 	const int maxNodes = 16;
-		
+	srand(time(NULL));
 		int packetSize = sizeof(tpacket) - 1;
         printf("Packet size = %d\n",packetSize);
 
