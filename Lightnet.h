@@ -84,6 +84,9 @@ class Lightnet
 	void push_lirc_pending(lirc_packet p);
 	void push_ether_tx(ether_packet p);
 	void push_ether_rx(ether_packet p);
+	vector<LightnetTap*> taps;
+	vector<LightnetLIRC*> lircs;
+
   private:
     pthread_mutex_t lock_lirc_tx, lock_lirc_rx, lock_lirc_pending, lock_ether_tx, lock_ether_rx;
 	pthread_attr_t attr;
@@ -97,8 +100,6 @@ class Lightnet
 	int ether_crc(ether_packet& erp);
 	int ir_dst(lirc_packet& irp);
 	vector<unsigned char> addresses;
-	vector<LightnetTap*> taps;
-	vector<LightnetLIRC*> lircs;
 	pthread_t p_threads[MAX_THREADS];// Threads
 	int thread_count = 0;
 };
