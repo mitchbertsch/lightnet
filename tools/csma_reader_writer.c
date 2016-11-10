@@ -2,6 +2,8 @@
 #include<string.h>
 #include<unistd.h>
 #include<fcntl.h>
+#include<stdlib.h>
+#include<time.h>
 int main()
 {
         char buffer[4];
@@ -15,6 +17,7 @@ int main()
         const char unsigned pulse771[4] = {0x03, 0x03, 0x00, 0x00};
         const char unsigned space257[4] = {0x01, 0x01, 0x00, 0x00};
         const char unsigned flag[4] = {0x01, 0x10, 0x00, 0x00};
+	const int maxNodes = 16;
 		
 		int packetSize = sizeof(tpacket) - 1;
         printf("Packet size = %d\n",packetSize);
@@ -32,7 +35,7 @@ int main()
 
 		int byteIndex = 0;
         int byteInt = 0;
-		int cycles = 10000000;//10s
+		int cycles = (rand() % maxNodes + 1) * 500000;//500ms-8s
 		while(cycles > 0){
 		int tmp = read(fd, buffer, 4); 
 				if(tmp == 4) {
@@ -44,7 +47,7 @@ int main()
 									printf("%i\n",cycles);
 									memset(packet,0,sizeof(packet));
 									packetIndex = 0;
-									cycles = 500000;//500ms
+									cycles = (rand() % maxNodes +1) * 500000;//500ms - 8s
 							}
 							else
 							{
