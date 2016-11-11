@@ -17,7 +17,8 @@ int main()
         const char unsigned pulse771[4] = {0x03, 0x03, 0x00, 0x00};
         const char unsigned space257[4] = {0x01, 0x01, 0x00, 0x00};
         const char unsigned flag[4] = {0x01, 0x10, 0x00, 0x00};
-	const int maxNodes = 16;
+	const int maxNodes = 256;
+	const int units = 10000;
 	srand(time(NULL));
 		int packetSize = sizeof(tpacket) - 1;
         printf("Packet size = %d\n",packetSize);
@@ -35,7 +36,8 @@ int main()
 
 		int byteIndex = 0;
         int byteInt = 0;
-		int cycles = (rand() % maxNodes + 1) * 500000;//500ms-8s
+		int rcycles = (rand() % maxNodes + 1) * units;//500ms-8s
+		int cycles = rcycles;
 		while(cycles > 0){
 		int tmp = read(fd, buffer, 4); 
 				if(tmp == 4) {
@@ -43,11 +45,10 @@ int main()
 					if((int)buffer[3]) {
 							if (pulseLength > 3000) {
 									packet[packetIndex] = '\0';
-									printf("%s - %i\n",packet,sizeof(packet));
-									printf("%i\n",cycles);
+									printf("%s - %i\n",packet,rcycles-cycles);
+									rcycles = (rand() % maxNodes + 1) * units;
 									memset(packet,0,sizeof(packet));
 									packetIndex = 0;
-									cycles = (rand() % maxNodes +1) * 500000;//500ms - 8s
 							}
 							else
 							{
@@ -68,6 +69,7 @@ int main()
 											byteIndex++;
 									}
 							}
+							cycles = rcycles;
 					}
 					else
 					{
@@ -86,20 +88,13 @@ int main()
 		}
         printf("End of file\n");
         close(fd);
-		usleep(100000);
+		usleep(units);
 		
 		
 
 		{
 			packetIndex = 0;
-			 while(packetIndex < packetSize) {
-
-                int subSize = 63;
-                if (packetSize - packetIndex < subSize) {       subSize = packetSize - packetIndex;     }
-                char subPacket[63];
-                memcpy(subPacket,&tpacket[packetIndex],subSize);
-
-                ptr_myfile=fopen("/dev/lirc0","wb");
+ ptr_myfile=fopen("/dev/lirc0","wb");
                 if (!ptr_myfile)
                 {
                         printf("Unable to open file!\n");
@@ -110,6 +105,14 @@ int main()
                         printf("Was able to open the file.\n");
                 }
 
+			 while(packetIndex < packetSize) {
+
+                int subSize = 63;
+                if (packetSize - packetIndex < subSize) {       subSize = packetSize - packetIndex;     }
+                char subPacket[63];
+                memcpy(subPacket,&tpacket[packetIndex],subSize);
+
+               
                 // write the terminal flag
                 size_t ret = fwrite(flag,1,4,ptr_myfile);
 
@@ -140,11 +143,12 @@ int main()
 
                 printf("End of file\n");
 
-                fclose(ptr_myfile);
-                packetIndex = packetIndex + subSize;
+                 fflush(ptr_myfile);
+               packetIndex = packetIndex + subSize;
 			}
 		
-		
+		 fclose(ptr_myfile);
+
 		
 		}
 		
