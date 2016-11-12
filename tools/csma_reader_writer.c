@@ -17,7 +17,7 @@ int main()
         const char unsigned pulse771[4] = {0x03, 0x03, 0x00, 0x00};
         const char unsigned space257[4] = {0x01, 0x01, 0x00, 0x00};
         const char unsigned flag[4] = {0x01, 0x10, 0x00, 0x00};
-	const int maxNodes = 256;
+	const int maxNodes = 64;
 	const int units = 10000;
 	srand(time(NULL));
 		int packetSize = sizeof(tpacket) - 1;
@@ -36,7 +36,7 @@ int main()
 
 		int byteIndex = 0;
         int byteInt = 0;
-		int rcycles = (rand() % maxNodes + 1) * units;//500ms-8s
+		int rcycles = (rand() % maxNodes + 1);//500ms-8s
 		int cycles = rcycles;
 		while(cycles > 0){
 		int tmp = read(fd, buffer, 4); 
@@ -46,7 +46,7 @@ int main()
 							if (pulseLength > 3000) {
 									packet[packetIndex] = '\0';
 									printf("%s - %i\n",packet,rcycles-cycles);
-									rcycles = (rand() % maxNodes + 1) * units;
+									rcycles = (rand() % maxNodes + 1);
 									memset(packet,0,sizeof(packet));
 									packetIndex = 0;
 							}
@@ -83,7 +83,10 @@ int main()
 					}
 
 			}else
+			{
+				usleep(units);
 				cycles--;
+			}
 	//
 		}
         printf("End of file\n");
