@@ -28,7 +28,8 @@ using namespace std;
 /* buffer for reading from tun/tap interface, must be >= 1500 */
 #define BUFSIZE 2000
 #define SUBBUFSIZE 63
-#define MAX_THREADS 4 
+#define MAXTHREADS 4 
+#define MAXNODES 254
 
 class Lightnet;
 class LightnetTap;
@@ -86,7 +87,7 @@ class Lightnet
 	void push_ether_rx(ether_packet p);
 	vector<LightnetTap*> taps;
 	vector<LightnetLIRC*> lircs;
-
+	int debugMain = 1;
   private:
     pthread_mutex_t lock_lirc_tx, lock_lirc_rx, lock_lirc_pending, lock_ether_tx, lock_ether_rx;
 	pthread_attr_t attr;
@@ -100,7 +101,7 @@ class Lightnet
 	int ether_crc(ether_packet& erp);
 	int ir_dst(lirc_packet& irp);
 	vector<unsigned char> addresses;
-	pthread_t p_threads[MAX_THREADS];// Threads
+	pthread_t p_threads[MAXTHREADS];// Threads
 	int thread_count = 0;
 };
 
@@ -113,6 +114,7 @@ class LightnetTap
     int init(unsigned char addr);
     void run();
 	static void *helper(void *context) {((LightnetTap *)context)->run();};
+	int debugTap = 0;
   private:
     int tun_alloc(char *dev, int flags);
     int cread(int fd, char *buf, int n);
@@ -129,16 +131,31 @@ class LightnetLIRC
     LightnetLIRC(Lightnet* ln) : lnet(ln) {};
     int init(string path);
     void run();
+	void iteration();
 	static void *helper(void *context) {((LightnetLIRC *)context)->run();};
-	const char unsigned pulse257[4] = {0x01, 0x01, 0x00, 0x00};
-	const char unsigned pulse771[4] = {0x03, 0x03, 0x00, 0x00};
-	const char unsigned space257[4] = {0x01, 0x01, 0x00, 0x00};
-	const char unsigned flag[4] = {0xe8, 0x03, 0x00, 0x00};
+	const char unsigned pulseZero[4] = {0x01, 0x01, 0x00, 0x00};
+	const char unsigned pulseOne[4] = {0x01, 0x02, 0x00, 0x00};
+	const char unsigned pulseDataFlag[4] = {0x01, 0x04, 0x00, 0x00};
+	const char unsigned pulseSubFlag[4] = {0x01, 0x03, 0x00, 0x00};
+	const char unsigned pulseAckFlag[4] = {0x01, 0x05, 0x00, 0x00};
+	const char unsigned space[4] = {0x01, 0x01, 0x00, 0x00};
+	const int pulseZeroMin = 127;
+	const int pulseZeroMax = 383;
+	const int pulseOneMin = 385;
+	const int pulseOneMax = 639;
+	const int pulseSubFlagMin = 641;
+	const int pulseSubFlagMax = 895;
+	const int pulseDataFlagMin = 897;
+	const int pulseDataFlagMax = 1151;
+	const int pulseAckFlagMin = 1153;
+	const int pulseAckFlagMax = 1407;
+	const int listen = 10000;
+	const int gap = 10000;
+	int debugLIRC = 6;
   private:
-    int IRfd;
 	string path;
 	Lightnet* lnet;
-	struct timeval IRtv; 
-	fd_set IRfds;
-   int getLength(char lbyte, char mbyte, char rbyte);
+    int getLength(char lbyte, char mbyte, char rbyte);
+	int openRD();
+	FILE* openWR();
 };

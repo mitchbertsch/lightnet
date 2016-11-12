@@ -225,6 +225,8 @@ void Lightnet::run()
 	{
 	  lirc_packet ir_tmp = pop_lirc_rx();
 	  if(ir_dst(ir_tmp))
+	    if(debugMain)
+		  cerr << "irpacket: " << ir_tmp.type << endl;
 	    if(ir_tmp.type == DATA)
 	    {
 	      ether_packet ether_tmp = lirc_to_ether(ir_tmp);
@@ -250,7 +252,7 @@ void Lightnet::run()
 	  push_lirc_tx(ether_to_lirc(ether_tmp));
 	}
 	
-	while(loop > 9 && !empty_lirc_pending())//1Hz
+	/*while(loop > 9 && !empty_lirc_pending())//1Hz
 	{
 	  lirc_packet ir_tmp = pop_lirc_pending();
 	  struct timeval current;
@@ -259,7 +261,7 @@ void Lightnet::run()
 	    push_lirc_tx(ir_tmp);
 	  else
 	    push_lirc_pending(ir_tmp);
-	}
+	}*/
 	
 	usleep(100000);//force thread to run at 10Hz
 	if(loop > 9)
