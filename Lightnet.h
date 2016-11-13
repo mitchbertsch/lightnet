@@ -117,6 +117,7 @@ class LightnetTap
     LightnetTap(Lightnet* ln) : lnet(ln) {};
     int init(unsigned char addr);
     void run();
+	void iteration();
 	static void *helper(void *context) {((LightnetTap *)context)->run();};
 	int debugTap = 0;
   private:
@@ -124,6 +125,8 @@ class LightnetTap
     int cread(int fd, char *buf, int n);
     int cwrite(int fd, char *buf, int n);
     int tap_fd;
+	int nread, nwrite;
+    char buffer[BUFSIZE];
 	Lightnet* lnet;
 
 };

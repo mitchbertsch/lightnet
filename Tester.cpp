@@ -1,9 +1,22 @@
 #include "Lightnet.h"
 
-void printBuffer(char buffer)
+void printBuffer(char buffer[],int size)
 {
-	
-
+	for (int i=0; i<size; i++) {
+		int charInt = buffer[i];
+		int j;
+                for (int j=0; j<8; j++) {
+                    if (charInt >= (1<<(7-j))) {
+                           // write a pulse 1
+                            cerr << "1";
+                            charInt = charInt - (1<<(7-j));
+                    } else {
+                            // write a pulse 0
+                            cerr << "0";
+                    }
+                }
+	}
+    cerr << endl;
 }
 
 ether_packet mkpacket(unsigned char dst,unsigned char src, Lightnet& l)
@@ -51,7 +64,7 @@ int main(int argc, char *argv[])
   int loop = 0;
   while(1)
   {
-    l.lircs[0]->iteration();
+    /*l.lircs[0]->iteration();
   
     while(!l.empty_lirc_rx())
 	{
@@ -84,7 +97,7 @@ int main(int argc, char *argv[])
 	  cerr << "~" << ether_tmp.length << "\n";
 	  l.push_lirc_tx(l.ether_to_lirc(ether_tmp));
 	}
-	l.lircs[0]->iteration();
+	l.lircs[0]->iteration();*/
 	/*while(loop > 9 && !empty_lirc_pending())//1Hz
 	{
 	  lirc_packet ir_tmp = pop_lirc_pending();
@@ -96,14 +109,20 @@ int main(int argc, char *argv[])
 	    push_lirc_pending(ir_tmp);
 	}*/
 	
-	if(loop >= 4)//create packet to send and decode
+	/*if(loop >= 4)//create packet to send and decode
 	{
 	  l.push_ether_rx(mkpacket(0xff,0x1,l));
 	  loop = 0;
 	}
 	loop++;
-	cerr << "loop" << loop << "\n";
-	//l.taps[0]->
+	cerr << "loop" << loop << "\n";*/
+	l.taps[0]->iteration();
+	while(!l.empty_ether_rx())
+	{
+	  ether_packet ether_tmp = l.pop_ether_rx();
+	  l.push_ether_tx(ether_tmp);
+	}
+	
   }
   cerr << "end";
 

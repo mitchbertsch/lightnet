@@ -12,7 +12,7 @@ int LightnetTap::tun_alloc(char *dev, int flags) {
   struct ifreq ifr;
   int fd, err;
 
-  if( (fd = open("/dev/net/tun", O_RDWR)) < 0 ) {
+  if( (fd = open("/dev/net/tun", O_RDWR | O_NONBLOCK)) < 0 ) {
     perror("Opening /dev/net/tun");
     return fd;
   }
@@ -93,7 +93,7 @@ int LightnetTap::init(unsigned char addr) {
   ss4 << ss1.str() + " ";
   command += ss4.str();
   system(command.c_str());
-
+  usleep(100000);
   if(tap_fd < 0){
     perror("Allocating interface");
 	return tap_fd;
@@ -101,21 +101,16 @@ int LightnetTap::init(unsigned char addr) {
   return 1;
 }
 
-void LightnetTap::run() {
-  cout << "tap start\n";
-  int nread, nwrite;
-  char buffer[BUFSIZE];
+void LightnetTap::iteration() {
   /* Now read data coming from the kernel */
-  while(1) {
-    /* Note that "buffer" should be at least the MTU size of the interface, eg 1500 bytes */
-    nread = cread(tap_fd,buffer,sizeof(buffer));
+    nread = read(tap_fd,buffer,sizeof(buffer));
 	//cout << "tap loop\n";
     if(nread > 0) {
 	  ether_packet tmp;
       tmp.length=nread;
       memcpy(tmp.buff,buffer,nread);
 	  lnet->push_ether_rx(tmp);
-	  //cout << "`" << tmp.length << "\n";
+	  cout << "`" << tmp.length << "\n";
     }
 	
 
@@ -123,11 +118,19 @@ void LightnetTap::run() {
 	{
 	  ether_packet tmp = lnet->pop_ether_tx();
 	  memcpy(buffer,tmp.buff,tmp.length);
-	  nwrite = cwrite(tap_fd, buffer, tmp.length);
+	  nwrite = write(tap_fd, buffer, tmp.length);
 	  //if(nwrite != tmp.length)
         
 	  
 	}
+}
+
+
+void LightnetTap::run() {
+  cout << "tap start\n";
+  /* Now read data coming from the kernel */
+  while(1) {
+    iteration();
     pthread_yield();
   }
 }
