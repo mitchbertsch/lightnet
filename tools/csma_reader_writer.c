@@ -14,10 +14,11 @@ int main()
 		char tpacket[] = "This is the packet that will be sent in chunks of 63 bytes across the IR network to the target device. Thanks to the changes that I just made, I am now able to send much larger packets.";
 		
 		const char unsigned pulse257[4] = {0x01, 0x01, 0x00, 0x00};
-        const char unsigned pulse771[4] = {0x03, 0x03, 0x00, 0x00};
+        const char unsigned pulse771[4] = {0x02, 0x02, 0x00, 0x00};
         const char unsigned space257[4] = {0x01, 0x01, 0x00, 0x00};
-        const char unsigned flag[4] = {0x01, 0x10, 0x00, 0x00};
-	const int maxNodes = 64;
+        const char unsigned flag[4] = {0x04, 0x04, 0x00, 0x00};
+	const char unsigned subflag[4] = {0x03, 0x03, 0x00, 0x00};
+	const int maxNodes = 512;
 	const int units = 10000;
 	srand(time(NULL));
 		int packetSize = sizeof(tpacket) - 1;
@@ -43,17 +44,20 @@ int main()
 				if(tmp == 4) {
 					long pulseLength = 256*(256*((int)buffer[2])+((int)buffer[1]))+((int)buffer[0]);
 					if((int)buffer[3]) {
-							if (pulseLength > 3000) {
+							if (pulseLength > 896) {
 									packet[packetIndex] = '\0';
 									printf("%s - %i\n",packet,rcycles-cycles);
 									rcycles = (rand() % maxNodes + 1);
 									memset(packet,0,sizeof(packet));
 									packetIndex = 0;
 							}
+							else if (pulseLength > 640) {
+									printf("sub\n");
+							}
 							else
 							{
 									byteInt*=2;
-									if (pulseLength > 500)
+									if (pulseLength > 384)
 									{
 											byteInt++;
 									}
@@ -91,7 +95,7 @@ int main()
 		}
         printf("End of file\n");
         close(fd);
-		usleep(units);
+		//usleep(units);
 		
 		
 
@@ -108,7 +112,10 @@ int main()
                         printf("Was able to open the file.\n");
                 }
 
-			 while(packetIndex < packetSize) {
+
+                size_t ret;
+
+	         while(packetIndex < packetSize) {
 
                 int subSize = 63;
                 if (packetSize - packetIndex < subSize) {       subSize = packetSize - packetIndex;     }
@@ -117,7 +124,10 @@ int main()
 
                
                 // write the terminal flag
-                size_t ret = fwrite(flag,1,4,ptr_myfile);
+		  if(packetIndex == 0)
+			ret = fwrite(flag,1,4,ptr_myfile);
+		  else
+                	ret = fwrite(subflag,1,4,ptr_myfile);
 
                 // write a space
                 ret = fwrite(space257,1,4,ptr_myfile);
@@ -141,15 +151,18 @@ int main()
                         }
                 }
 
+packetIndex = packetIndex + subSize;
                 // write another terminal flag
-                ret = fwrite(flag,1,4,ptr_myfile);
+		  if(packetIndex == packetSize)
+			 ret = fwrite(flag,1,4,ptr_myfile);
+		else
+                	ret = fwrite(subflag,1,4,ptr_myfile);
 
                 printf("End of file\n");
 
                  fflush(ptr_myfile);
-               packetIndex = packetIndex + subSize;
+               
 			}
-		
 		 fclose(ptr_myfile);
 
 		
