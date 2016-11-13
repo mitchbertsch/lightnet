@@ -27,6 +27,17 @@ ether_packet Lightnet::lirc_to_ether(lirc_packet& irp) {
   return erp;
 }
 
+lirc_packet Lightnet::ether_ack(ether_packet& erp) {
+  lirc_packet ir_ack;
+  ir_ack.length = 6;
+  ir_ack.buff[0] = erp.buff[15];
+  ir_ack.buff[1] = erp.buff[9];
+  memcpy(ir_ack.buff+2,erp.buff+erp.length-4,4); //copy ethertype crc
+  ir_ack.type=ACK;
+  return ir_ack;
+}
+
+
 int Lightnet::ir_dst(lirc_packet& irp)
 {
   for(int i = 0; i < addresses.size(); i++)
@@ -215,6 +226,24 @@ int Lightnet::init_lirc(string path)
     return 0;
 }
 
+int Lightnet::init(unsigned char addr, string path)
+{
+  LightnetTap* ltap = new LightnetTap(this);
+  LightnetLIRC* llirc = new LightnetLIRC(this);
+  if(ltap->init(addr))
+  {
+    taps.push_back(ltap);
+	addresses.push_back(addr);
+	if(llirc->init(path))
+    {
+      lircs.push_back(llirc);
+	  return 1;
+    }
+  }else
+    return 0;
+}
+
+
 void Lightnet::run()
 {
   cerr << "net start\n";
@@ -233,12 +262,7 @@ void Lightnet::run()
 	      if(ether_crc(ether_tmp))
 	      {
 	        push_ether_tx(ether_tmp);
-	        lirc_packet ir_ack;
-		    ir_ack.length = 2;
-		    ir_ack.buff[0] = ir_tmp.buff[1];
-		    ir_ack.buff[1] = ir_tmp.buff[0];
-		    ir_ack.type=ACK;
-	        push_lirc_tx(ir_ack);
+	        push_lirc_tx(ether_ack(ether_tmp));
 	      }
 	    }
 	}

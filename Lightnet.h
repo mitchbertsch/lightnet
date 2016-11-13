@@ -62,6 +62,7 @@ class Lightnet
   public:
     Lightnet();
 	~Lightnet();
+	int init(unsigned char addr, string path);
     int init_tap(unsigned char addr);
 	int init_lirc(string path);
 	const unsigned char ether_flag[4] = {0x00,0x00,0x10,0x0D};
@@ -88,6 +89,13 @@ class Lightnet
 	vector<LightnetTap*> taps;
 	vector<LightnetLIRC*> lircs;
 	int debugMain = 1;
+	
+	lirc_packet ether_to_lirc(ether_packet& erp);
+    ether_packet lirc_to_ether(lirc_packet& irp);
+	lirc_packet ether_ack(ether_packet& erp);
+	int ether_crc(ether_packet& erp);
+	int ir_dst(lirc_packet& irp);
+	
   private:
     pthread_mutex_t lock_lirc_tx, lock_lirc_rx, lock_lirc_pending, lock_ether_tx, lock_ether_rx;
 	pthread_attr_t attr;
@@ -96,10 +104,6 @@ class Lightnet
     priority_queue<lirc_packet> lirc_pending;
     priority_queue<ether_packet> ether_tx;
     priority_queue<ether_packet> ether_rx;
-    lirc_packet ether_to_lirc(ether_packet& erp);
-    ether_packet lirc_to_ether(lirc_packet& irp);
-	int ether_crc(ether_packet& erp);
-	int ir_dst(lirc_packet& irp);
 	vector<unsigned char> addresses;
 	pthread_t p_threads[MAXTHREADS];// Threads
 	int thread_count = 0;
