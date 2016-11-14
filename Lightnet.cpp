@@ -75,15 +75,24 @@ int Lightnet::check_crc(lirc_packet& irp) {
 		checkSum = checkSum^bufNum;
 	}
 	
-	/*if(checkSum == 0)
+	if(checkSum == 0)
 		return 1;
 	else
-		return 0;*/
-	return 1;
+		return 0;
 }
 
 void Lightnet::append_crc(lirc_packet& irp){
+	char checkSum[4] = {0,0,0,0};
+	int end = irp.length + (irp.length % 4);
+	for(int i = irp.length; i < end; i++)
+		irp.buff[i] = 0x00;
 	
+	for(int i = 0; i < irp.length; i++){
+		checkSum[i] = (checkSum[i%4])^(buffer[i]);
+	}
+	
+	memcpy(irp.buff+irp.length,checksum,4);
+	irp.length += 4;
 }
 
 void Lightnet::remove_crc(lirc_packet& irp){
