@@ -51,6 +51,7 @@ class lirc_packet
   public:
     int length;
 	int priority = 100;
+	int transmissions = 0;
     char buff[BUFSIZE];
     packet_type type;
     struct timeval sent;
@@ -65,11 +66,10 @@ class Lightnet
 	int init(unsigned char addr, string path);
     int init_tap(unsigned char addr);
 	int init_lirc(string path);
-	const unsigned char ether_flag[4] = {0x00,0x00,0x10,0x0D};
     const unsigned char ether_mac[5] = {0x6E,0xE2,0xE0,0x7F,0xFA};
 	const unsigned char ipv4[2] = {0xC0,0xA8};;
 	unsigned int mtu = 576;
-	double timeout = 5;
+	int timeout = 10;
 	void run();
 	int empty_lirc_tx();
 	int empty_lirc_rx();
@@ -89,19 +89,24 @@ class Lightnet
 	vector<LightnetTap*> taps;
 	vector<LightnetLIRC*> lircs;
 	int debugMain = 1;
-	
+	int crc = 0;
+	int transmissions = 5;
 	lirc_packet ether_to_lirc(ether_packet& erp);
     ether_packet lirc_to_ether(lirc_packet& irp);
-	lirc_packet ether_ack(ether_packet& erp);
-	int ether_crc(ether_packet& erp);
-	int ir_dst(lirc_packet& irp);
-	
+	lirc_packet lirc_ack(lirc_packet& irp);
+	int check_crc(lirc_packet& irp);
+	void append_crc(lirc_packet& irp);
+	void remove_crc(lirc_packet& irp);
+	int lirc_dst(lirc_packet& irp);
+	void remove_pending(lirc_packet& ir_ack);
+	void clear_pending();
+	int lirc_id(lirc_packet& p);
   private:
     pthread_mutex_t lock_lirc_tx, lock_lirc_rx, lock_lirc_pending, lock_ether_tx, lock_ether_rx;
 	pthread_attr_t attr;
     priority_queue<lirc_packet> lirc_tx;
     priority_queue<lirc_packet> lirc_rx;
-    priority_queue<lirc_packet> lirc_pending;
+    vector<lirc_packet> lirc_pending;
     priority_queue<ether_packet> ether_tx;
     priority_queue<ether_packet> ether_rx;
 	vector<unsigned char> addresses;

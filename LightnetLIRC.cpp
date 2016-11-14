@@ -195,6 +195,7 @@ void LightnetLIRC::iteration()
 		if(ir_tmp.type == DATA)
 		{
 			gettimeofday(&(ir_tmp.sent), NULL); 
+			ir_tmp.transmissions++;
 			lnet->push_lirc_pending(ir_tmp);
 		}
 	}
