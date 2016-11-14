@@ -69,7 +69,7 @@ class Lightnet
     const unsigned char ether_mac[5] = {0x6E,0xE2,0xE0,0x7F,0xFA};
 	const unsigned char ipv4[2] = {0xC0,0xA8};;
 	unsigned int mtu = 576;
-	int timeout = 10;
+	int timeout = 5;
 	void run();
 	int empty_lirc_tx();
 	int empty_lirc_rx();

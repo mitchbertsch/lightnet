@@ -103,6 +103,7 @@ int main(int argc, char *argv[])
 	}
 	l.lircs[0]->iteration();
 	
+	//cerr << "pending empty: " << l.empty_lirc_pending() << endl;
 	if(!l.empty_lirc_pending())
 	  l.clear_pending();
 	

@@ -5,6 +5,7 @@
  **************************************************************************/
 lirc_packet Lightnet::ether_to_lirc(ether_packet& erp) {
   lirc_packet irp;
+  irp.type = DATA;
   memcpy(irp.buff,erp.buff,4);//copy flags & proto
   irp.buff[4]=erp.buff[9];//copy dst mac
   irp.buff[5]=erp.buff[15];//copy src mac
@@ -116,6 +117,8 @@ void Lightnet::clear_pending()
   gettimeofday(&current, NULL);
   pthread_mutex_lock(&lock_lirc_pending);
   for(int i = 0; i < lirc_pending.size(); i++)
+  {
+    //cerr << "pending time: " << (current.tv_sec-lirc_pending[i].sent.tv_sec) << endl;
     if((current.tv_sec-lirc_pending[i].sent.tv_sec) >= timeout)
       if(lirc_pending[i].transmissions>=transmissions)
 	    lirc_pending.erase(lirc_pending.begin()+i--);
@@ -124,6 +127,7 @@ void Lightnet::clear_pending()
 	    push_lirc_tx(lirc_pending[i]);
 		lirc_pending.erase(lirc_pending.begin()+i--);
 	  }
+  }
   pthread_mutex_unlock(&lock_lirc_pending);
 }
 
