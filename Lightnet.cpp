@@ -88,10 +88,10 @@ void Lightnet::append_crc(lirc_packet& irp){
 		irp.buff[i] = 0x00;
 	
 	for(int i = 0; i < irp.length; i++){
-		checkSum[i] = (checkSum[i%4])^(buffer[i]);
+		checkSum[i] = (checkSum[i%4])^(irp.buff[i]);
 	}
 	
-	memcpy(irp.buff+irp.length,checksum,4);
+	memcpy(irp.buff+irp.length,checkSum,4);
 	irp.length += 4;
 }
 
