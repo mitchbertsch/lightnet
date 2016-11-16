@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
   int loop = 0;
   while(1)
   {
-    l.lircs[0]->iteration();
+    /*l.lircs[0]->iteration();
   
     while(!l.empty_lirc_rx())
 	{
@@ -93,31 +93,31 @@ int main(int argc, char *argv[])
 	    }
 	}
 	l.lircs[0]->iteration();
-	//cerr << "loop\n";
+	//cerr << "loop\n";*/
 	while(!l.empty_ether_rx())
 	{
 	  ether_packet ether_tmp = l.pop_ether_rx();
 	  //cerr << "packet data = ";
-	  cerr << "~" << ether_tmp.length << "\n";
+	  //cerr << "~" << ether_tmp.length << "\n";
 	  l.push_lirc_tx(l.ether_to_lirc(ether_tmp));
 	}
-	l.lircs[0]->iteration();
+	//l.lircs[0]->iteration();
 	
 	//cerr << "pending empty: " << l.empty_lirc_pending() << endl;
-	if(!l.empty_lirc_pending())
-	  l.clear_pending();
+	/*if(!l.empty_lirc_pending())
+	  l.clear_pending();*/
 	
 	if(loop >= 20)//create packet to send and decode
 	{
-	  ether_packet ether_tmp = mkpacket(0xff,0x1,l);
+	 // ether_packet ether_tmp = mkpacket(0xff,0x1,l);
 	  //printBuffer(ether_tmp.buff,ether_tmp.length);
-	  l.push_ether_rx(ether_tmp);
+	  //l.push_ether_rx(ether_tmp);
 	  loop = 0;
 	}
 	loop++;
 	cerr << "loop" << loop << "\n";
-	/*l.taps[0]->iteration();
-	while(!l.empty_ether_rx())
+	l.taps[0]->iteration();
+	/*while(!l.empty_ether_rx())
 	{
 	  ether_packet ether_tmp = l.pop_ether_rx();
 	  printBuffer(ether_tmp.buff,ether_tmp.length);

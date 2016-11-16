@@ -89,9 +89,10 @@ class Lightnet
 	void push_ether_rx(ether_packet p);
 	vector<LightnetTap*> taps;
 	vector<LightnetLIRC*> lircs;
-	int debugMain = 1;
-	int crc = 1;
+	int debugMain = 7;
+	int crc = 0;
 	int transmissions = 5;
+	int multithread = 1;
 	lirc_packet ether_to_lirc(ether_packet& erp);
     ether_packet lirc_to_ether(lirc_packet& irp);
 	lirc_packet lirc_ack(lirc_packet& irp);

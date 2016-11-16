@@ -318,6 +318,7 @@ int Lightnet::init(unsigned char addr, string path)
 {
   LightnetTap* ltap = new LightnetTap(this);
   LightnetLIRC* llirc = new LightnetLIRC(this);
+  this->multithread = 0;
   if(ltap->init(addr))
   {
     taps.push_back(ltap);
@@ -335,50 +336,74 @@ int Lightnet::init(unsigned char addr, string path)
 void Lightnet::run()
 {
   cerr << "net start\n";
-  /*int loop = 0;
+  int loop = 0;
   while(1)
   {
+    if(debugMain>6)
+		cerr << "LIRC Itter" << endl;
+    if(multithread==0)
+		lircs[0]->iteration();
+  
+    if(debugMain>6)
+		cerr << "LIRC Rx" << endl;
     while(!empty_lirc_rx())
 	{
 	  lirc_packet ir_tmp = pop_lirc_rx();
-	  if(ir_dst(ir_tmp))
-	    if(debugMain)
-		  cerr << "irpacket: " << ir_tmp.type << endl;
-	    if(ir_tmp.type == DATA)
+	  cerr << "irpacket: " << ir_tmp.type << " " << ir_tmp.length << endl;
+	  if(lirc_dst(ir_tmp))
+	    if(ir_tmp.type == ACK && ir_tmp.length == 4)
+		{
+		  remove_pending(ir_tmp);
+		  cerr << empty_lirc_pending() << endl;
+		}
+	    if(ir_tmp.type == DATA && ir_tmp.length > 18)
 	    {
-	      ether_packet ether_tmp = lirc_to_ether(ir_tmp);
-	      if(ether_crc(ether_tmp))
+	      
+	      if(check_crc(ir_tmp))
 	      {
+		    ether_packet ether_tmp = lirc_to_ether(ir_tmp);
 	        push_ether_tx(ether_tmp);
-	        push_lirc_tx(ether_ack(ether_tmp));
+	        lirc_packet ir_ack = lirc_ack(ir_tmp);
+	        push_lirc_tx(ir_ack);
 	      }
 	    }
 	}
 	
-	//cerr << "loop\n";
+	 if(debugMain>6)
+		cerr << "LIRC Itter" << endl;
+	if(multithread==0)
+		lircs[0]->iteration();
+	 if(debugMain>6)
+		cerr << "Ether Itter" << endl;
+	if(multithread==0)
+		taps[0]->iteration();
+	
+
 	while(!empty_ether_rx())
 	{
-	  ether_packet ether_tmp = pop_ether_rx();
-	  //cerr << "packet data = ";
-	  cerr << "~" << ether_tmp.length << "\n";
-	  push_lirc_tx(ether_to_lirc(ether_tmp));
+		if(debugMain>6)
+			cerr << "Ether Rx" << endl;
+		ether_packet ether_tmp = pop_ether_rx();
+		cerr << "hit" << endl;
+		lirc_packet lirc_tmp = ether_to_lirc(ether_tmp);
+		cerr << "hit2" << endl;
+		push_lirc_tx(lirc_tmp);
+		cerr << "done" << endl;
 	}
-	*/
-	/*while(loop > 9 && !empty_lirc_pending())//1Hz
+	
+
+	if(!empty_lirc_pending())
 	{
-	  lirc_packet ir_tmp = pop_lirc_pending();
-	  struct timeval current;
-	  gettimeofday(&current, NULL);
-	  if(((current.tv_sec-ir_tmp.sent.tv_sec)+0.000001*(current.tv_usec-ir_tmp.sent.tv_usec)) > timeout)
-	    push_lirc_tx(ir_tmp);
-	  else
-	    push_lirc_pending(ir_tmp);
-	}*/
-	/*
-	usleep(100000);//force thread to run at 10Hz
-	if(loop > 9)
-	  loop = 0;
-  }*/
+		if(debugMain>6)
+			cerr << "Pending Cleanup" << endl;
+		clear_pending();
+	}
+	loop++;
+	cerr << "loop" << loop << "\n";
+	
+
+	
+  }
   cerr << "end";
 
 }
