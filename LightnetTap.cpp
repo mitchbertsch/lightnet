@@ -77,7 +77,7 @@ int LightnetTap::init(unsigned char addr) {
   tap_fd = tun_alloc(const_cast<char*>(tap_name.c_str()), IFF_TAP);  /* tun interface */
   string command = "./tap.sh ";
   command += tap_name + " ";
-  stringstream ss2, ss3, ss4;
+  stringstream ss2, ss3, ss4, ss5;
   ss2 << lnet->mtu;
   command += ss2.str() + " ";
   ss3 << hex << setfill('0') << setw(2);
@@ -86,14 +86,27 @@ int LightnetTap::init(unsigned char addr) {
   ss3 << (int)(lnet->ether_mac[2]) << ":";
   ss3 << (int)(lnet->ether_mac[3]) << ":";
   ss3 << (int)(lnet->ether_mac[4]) << ":";
-  ss3 << (int)addr << " ";
-  command += ss3.str();
-  ss4 << (int)(lnet->ipv4[0]) << "."; 
-  ss4 << (int)(lnet->ipv4[1]) << ".0.";
-  ss4 << ss1.str() + " ";
-  command += ss4.str();
+  ss4 << hex << setfill('0') << setw(2) << (int)addr;
+  command += ss3.str() + ss4.str() + " ";
+  ss5 << (int)(lnet->ipv4[0]) << "."; 
+  ss5 << (int)(lnet->ipv4[1]) << ".";
+  ss5 << (int)(lnet->ipv4[2]) << ".";;
+  command += ss5.str()+ss1.str() + " ";
+  cerr << command << endl;
   system(command.c_str());
-  usleep(100000);
+  usleep(10000);
+  string command2;
+  for(int i = 1; i <= lnet->nodes; i++)
+    if(i != (int)addr)
+    {
+      stringstream ss6, ss7;
+	  ss6 << (int)i;
+	  ss7 << hex << setfill('0') << setw(2) << (int)i;
+	  command2 = "./arp.sh " + tap_name + " " + ss5.str() + ss6.str() + " " + ss3.str() + ss7.str();
+	  cerr << command2 << endl;
+	  system(command2.c_str());
+      usleep(10000);
+    }
   if(tap_fd < 0){
     perror("Allocating interface");
 	return tap_fd;

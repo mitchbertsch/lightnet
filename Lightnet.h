@@ -67,9 +67,10 @@ class Lightnet
     int init_tap(unsigned char addr);
 	int init_lirc(string path);
     const unsigned char ether_mac[5] = {0x6E,0xE2,0xE0,0x7F,0xFA};
-	const unsigned char ipv4[2] = {0xC0,0xA8};;
+	const unsigned char ipv4[3] = {0xC0,0xA8,0x00};
 	unsigned int mtu = 576;
 	int timeout = 5;
+	int nodes = 5;
 	void run();
 	int empty_lirc_tx();
 	int empty_lirc_rx();
