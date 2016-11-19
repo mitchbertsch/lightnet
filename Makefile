@@ -6,8 +6,8 @@ all: lightnetd
 Lightnet.o: Lightnet.cpp Lightnet.h
 	$(CXX) $(CXXFlags) -c Lightnet.cpp
 
-LightnetTap.o: LightnetTap.cpp Lightnet.h
-	$(CXX) $(CXXFlags) -c LightnetTap.cpp
+LightnetTAP.o: LightnetTAP.cpp Lightnet.h
+	$(CXX) $(CXXFlags) -c LightnetTAP.cpp
 
 LightnetLIRC.o: LightnetLIRC.cpp Lightnet.h
 	$(CXX) $(CXXFlags) -c LightnetLIRC.cpp
@@ -18,11 +18,11 @@ LightnetD.o: LightnetD.cpp Lightnet.h
 Tester.o: Tester.cpp Lightnet.h
 	$(CXX) $(CXXFlags) -c Tester.cpp
 
-lightnetd: Lightnet.o LightnetTap.o LightnetLIRC.o LightnetD.o
-	$(CXX) $(CXXFlags) Lightnet.o LightnetTap.o LightnetLIRC.o LightnetD.o -o lightnetd
+lightnetd: Lightnet.o LightnetTAP.o LightnetLIRC.o LightnetD.o
+	$(CXX) $(CXXFlags) Lightnet.o LightnetTAP.o LightnetLIRC.o LightnetD.o -o lightnetd
 
-tester: Lightnet.o LightnetTap.o LightnetLIRC.o Tester.o
-	$(CXX) $(CXXFlags) Lightnet.o LightnetTap.o LightnetLIRC.o Tester.o -o tester
+tester: Lightnet.o LightnetTAP.o LightnetLIRC.o Tester.o
+	$(CXX) $(CXXFlags) Lightnet.o LightnetTAP.o LightnetLIRC.o Tester.o -o tester
 
 clean:
 	rm *.o lightnetd tester

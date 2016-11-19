@@ -20,9 +20,10 @@ void printBuffer(char buffer[],int size)
     cerr << endl;
 }
 
-ether_packet mkpacket(unsigned char dst,unsigned char src, Lightnet& l)
+Packet mkpacket(unsigned char dst,unsigned char src, Lightnet& l)
 {
-	ether_packet erp;
+	Packet erp;
+	erp.type = ETHERNET;
 	char packet[] = "This is the packet that will be sent in chunks of 63 bytes across the IR network to the target device. Thanks to the changes that I just made, I am now able to send much larger packets.";
 	int size = sizeof(packet) - 1;
 	//printf("%s %i\n",packet, size);
@@ -41,7 +42,7 @@ ether_packet mkpacket(unsigned char dst,unsigned char src, Lightnet& l)
 	return erp;
 }
 
-void rdpacket(ether_packet& erp)
+void rdpacket(Packet& erp)
 {
 	cout << (int)erp.buff[9] << "-" << (int)erp.buff[15] << "=" << erp.length << endl;
 	char tmp[BUFSIZE];
@@ -64,63 +65,70 @@ int main(int argc, char *argv[])
   int loop = 0;
   while(1)
   {
+    cerr << "LIRC Itter" << endl;
     l.lircs[0]->iteration();
+	cerr << "LIRC Rx" << endl;
   
     while(!l.empty_lirc_rx())
 	{
-	  lirc_packet ir_tmp = l.pop_lirc_rx();
-	  cerr << "irpacket: " << ir_tmp.type << " " << ir_tmp.length << endl;
-	  printBuffer(ir_tmp.buff,ir_tmp.length);
-	  if(l.lirc_dst(ir_tmp))
-	    if(ir_tmp.type == ACK && ir_tmp.length == 4)
+	  Packet tmp = l.pop_lirc_rx();
+	  cerr << "irpacket: " << tmp.type << " " << tmp.length << endl;
+	  printBuffer(tmp.buff,tmp.length);
+	 
+	    if(tmp.type == LIRCACK && tmp.length == 10)
 		{
-		  l.remove_pending(ir_tmp);
+		  l.remove_pending(tmp);
 		  cerr << l.empty_lirc_pending() << endl;
 		}
-	    if(ir_tmp.type == DATA && ir_tmp.length > 18)
+	    if(tmp.type == LIRCDATA && tmp.length > 22)
 	    {
 	      
-	      if(l.check_crc(ir_tmp))
+	      if(l.check_crc(tmp))
 	      {
-		    ether_packet ether_tmp = l.lirc_to_ether(ir_tmp);
-	        l.push_ether_tx(ether_tmp);
-			cout << "rd\n";
-			rdpacket(ether_tmp);
-	        lirc_packet ir_ack = l.lirc_ack(ir_tmp);
+			Packet ir_ack = l.lirc_ack(tmp);
 	        l.push_lirc_tx(ir_ack);
+			l.lirc_to_ether(tmp);
+			cout << "rd\n";
+			rdpacket(tmp);
+
 	      }
 	    }
 	}
+	
+	cerr << "LIRC Itter" << endl;
 	l.lircs[0]->iteration();
-	//cerr << "loop\n";*/
+	cerr << "Ether Itter" << endl;
+	//l.taps[0]->iteration();
+	
 	while(!l.empty_ether_rx())
 	{
-	  ether_packet ether_tmp = l.pop_ether_rx();
-	  //cerr << "packet data = ";
-	  //cerr << "~" << ether_tmp.length << "\n";
-	  lirc_packet ir_tmp = l.ether_to_lirc(ether_tmp);
-	  printBuffer(ir_tmp.buff,ir_tmp.length);
-	  l.push_lirc_tx(ir_tmp);
+		cerr << "Ether Rx" << endl;
+		Packet tmp = l.pop_ether_rx();
+		cerr << "hit" << endl;
+		l.ether_to_lirc(tmp);
+		cerr << "hit2" << endl;
+		l.push_lirc_tx(tmp);
+		cerr << "done" << endl;
 	}
-	//l.lircs[0]->iteration();
 	
-	//cerr << "pending empty: " << l.empty_lirc_pending() << endl;
-	/*if(!l.empty_lirc_pending())
-	  l.clear_pending();*/
+	if(!l.empty_lirc_pending())
+	{
+		cerr << "Pending Cleanup" << endl;
+		l.clear_pending();
+	}
 	
 	if(loop >= 20)//create packet to send and decode
 	{
-	  ether_packet ether_tmp = mkpacket(0xff,0x1,l);
+	 Packet ether_tmp = mkpacket(0xff,0x1,l);
 	  //printBuffer(ether_tmp.buff,ether_tmp.length);
 	  l.push_ether_rx(ether_tmp);
-	  loop = 0;
 	}
 	loop++;
 	cerr << "loop" << loop << "\n";
 	//l.taps[0]->iteration();
 	/*while(!l.empty_ether_rx())
 	{
-	  ether_packet ether_tmp = l.pop_ether_rx();
+	  Packet ether_tmp = l.pop_ether_rx();
 	  printBuffer(ether_tmp.buff,ether_tmp.length);
 	  l.push_ether_tx(ether_tmp);
 	}*/

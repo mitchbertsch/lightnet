@@ -1,6 +1,6 @@
 #include "Lightnet.h"
 
-int LightnetLIRC::getLength(char lbyte, char mbyte, char rbyte) {
+int LightnetLIRC::get_length(char lbyte, char mbyte, char rbyte) {
   int left = (int)lbyte;
   int middle = (int)mbyte;
   int right = (int)rbyte;
@@ -9,7 +9,7 @@ int LightnetLIRC::getLength(char lbyte, char mbyte, char rbyte) {
   return left + middle + right;
 }
 
-int LightnetLIRC::openRD()
+int LightnetLIRC::open_rd()
 {
   int fd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
   if(fd < 0)
@@ -17,7 +17,7 @@ int LightnetLIRC::openRD()
   return fd;
 }
 
-FILE* LightnetLIRC::openWR()
+FILE* LightnetLIRC::open_wr()
 {
   FILE *ptr = fopen("/dev/lirc0","wb");
   if(!ptr)
@@ -44,9 +44,9 @@ void LightnetLIRC::iteration()
 	FILE* file;
 	int fd, packetIndex, byteIndex, byteInt, rcycles, cycles, nread, pulseLength;
 	
-	if(debugLIRC>6)
+	if(debug_lirc>6)
 		cerr << "read mode\n";
-	fd = openRD();
+	fd = open_rd();
 	packetIndex = 0;
 	byteIndex = 0;
 	byteInt = 0;
@@ -58,14 +58,14 @@ void LightnetLIRC::iteration()
 	while(cycles > 0){
 		nread = read(fd, bit, 4);
 		if(nread == 4) {
-			pulseLength = getLength(bit[0], bit[1], bit[2]);
+			pulseLength = get_length(bit[0], bit[1], bit[2]);
 			if((int)bit[3]) {
-				if (pulseLength >= pulseAckFlagMin && pulseLength <= pulseAckFlagMax) {
+				if (pulseLength >= pulse_ack_flag_min && pulseLength <= pulse_ack_flag_max) {
 					if(packetIndex != 0)
 					{
-						lirc_packet ir_tmp;
+						Packet ir_tmp;
 						ir_tmp.length = packetIndex;
-						ir_tmp.type = ACK;
+						ir_tmp.type = LIRCACK;
 						memcpy(ir_tmp.buff,packet,ir_tmp.length);
 						lnet->push_lirc_rx(ir_tmp);
 						rcycles = (rand() % MAXNODES + 1);
@@ -74,14 +74,14 @@ void LightnetLIRC::iteration()
 						byteInt = 0;
 						byteIndex = 0;
 					}
-					if(debugLIRC>6)
+					if(debug_lirc>6)
 						cerr << "ackflag\n";
-				}else if (pulseLength >= pulseDataFlagMin && pulseLength <= pulseDataFlagMax) {
+				}else if (pulseLength >= pulse_data_flag_min && pulseLength <= pulse_data_flag_max) {
 					if(packetIndex != 0)
 					{
-						lirc_packet ir_tmp;
+						Packet ir_tmp;
 						ir_tmp.length = packetIndex;
-						ir_tmp.type = DATA;
+						ir_tmp.type = LIRCDATA;
 						memcpy(ir_tmp.buff,packet,ir_tmp.length);
 						lnet->push_lirc_rx(ir_tmp);
 						rcycles = (rand() % MAXNODES + 1);
@@ -90,14 +90,14 @@ void LightnetLIRC::iteration()
 						byteInt = 0;
 						byteIndex = 0;
 					}
-					if(debugLIRC>6)
+					if(debug_lirc>6)
 						cerr << "dataflag\n";
-				}else if (pulseLength >= pulseSubFlagMin && pulseLength <= pulseSubFlagMax) {
-					if(debugLIRC)
+				}else if (pulseLength >= pulse_sub_flag_min && pulseLength <= pulse_sub_flag_max) {
+					if(debug_lirc)
 						cerr << "subflag\n";
 				}else{
 					byteInt*=2;
-					if (pulseLength >= pulseOneMin && pulseLength <= pulseOneMax)
+					if (pulseLength >= pulse_one_min && pulseLength <= pulse_one_max)
 					{
 						byteInt++;
 					}
@@ -112,7 +112,7 @@ void LightnetLIRC::iteration()
 					{
 						byteIndex++;
 					}
-					if(debugLIRC>7)
+					if(debug_lirc>7)
 						cerr << "byte\n";
 				}
 				cycles = rcycles;
@@ -120,7 +120,7 @@ void LightnetLIRC::iteration()
 			else
 			{
 				if (pulseLength > gap) {
-					if(debugLIRC>6)
+					if(debug_lirc>6)
 						cerr << "reset\n";
 					rcycles = (rand() % MAXNODES + 1);
 					memset(packet,0,BUFSIZE);
@@ -136,7 +136,7 @@ void LightnetLIRC::iteration()
 		}
 	}
 	close(fd);
-    if(debugLIRC>6)
+    if(debug_lirc>6)
 		cerr << "write mode\n";
 	//usleep(units);
 	
@@ -144,21 +144,21 @@ void LightnetLIRC::iteration()
 		
 	if(!lnet->empty_lirc_tx()) {
 	
-		file=openWR();
+		file=open_wr();
 		packetIndex = 0;
-		lirc_packet ir_tmp = lnet->pop_lirc_tx();
+		Packet ir_tmp = lnet->pop_lirc_tx();
 		while(packetIndex < ir_tmp.length) {
 			int subSize = SUBBUFSIZE;
 			if (ir_tmp.length - packetIndex < SUBBUFSIZE)
 				subSize = ir_tmp.length - packetIndex;
 				
 			// write the flag
-			if(ir_tmp.type == ACK)
-				fwrite(pulseAckFlag,1,4,file);
+			if(ir_tmp.type == LIRCACK)
+				fwrite(pulse_ack_flag,1,4,file);
 			else if(packetIndex == 0)
-				fwrite(pulseDataFlag,1,4,file);
+				fwrite(pulse_data_flag,1,4,file);
 			else
-               	fwrite(pulseSubFlag,1,4,file);
+               	fwrite(pulse_sub_flag,1,4,file);
 			
 			// write a space
             fwrite(space,1,4,file);
@@ -169,11 +169,11 @@ void LightnetLIRC::iteration()
                 for (int j=0; j<8; j++) {
                     if (charInt >= (1<<(7-j))) {
                            // write a pulse 1
-                            fwrite(pulseOne,1,4,file);
+                            fwrite(pulse_one,1,4,file);
                             charInt = charInt - (1<<(7-j));
                     } else {
                             // write a pulse 0
-                            fwrite(pulseZero,1,4,file);
+                            fwrite(pulse_zero,1,4,file);
                     }
 						// write a space
                         fwrite(space,1,4,file);
@@ -183,16 +183,16 @@ void LightnetLIRC::iteration()
 			packetIndex = packetIndex + subSize;
 			cerr << "pi: " << packetIndex << "/" << ir_tmp.length << endl;
                // write another terminal flag
-			if(ir_tmp.type == ACK)
-				fwrite(pulseAckFlag,1,4,file);
+			if(ir_tmp.type == LIRCACK)
+				fwrite(pulse_ack_flag,1,4,file);
 			else if(packetIndex == ir_tmp.length)
-				fwrite(pulseDataFlag,1,4,file);
+				fwrite(pulse_data_flag,1,4,file);
 			else
-               	fwrite(pulseSubFlag,1,4,file);
+               	fwrite(pulse_sub_flag,1,4,file);
                fflush(file);
 		}
 		fclose(file);
-		if(ir_tmp.type == DATA)
+		if(ir_tmp.type == LIRCDATA)
 		{
 			gettimeofday(&(ir_tmp.sent), NULL); 
 			ir_tmp.transmissions++;

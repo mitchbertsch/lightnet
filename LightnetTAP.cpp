@@ -7,7 +7,7 @@
  * tun_alloc: allocates or reconnects to a tun/tap device. The caller     *
  *            needs to reserve enough space in *dev.                      *
  **************************************************************************/
-int LightnetTap::tun_alloc(char *dev, int flags) {
+int LightnetTAP::tun_alloc(char *dev, int flags) {
 
   struct ifreq ifr;
   int fd, err;
@@ -40,7 +40,7 @@ int LightnetTap::tun_alloc(char *dev, int flags) {
  * cread: read routine that checks for errors and exits if an error is    *
  *        returned.                                                       *
  **************************************************************************/
-int LightnetTap::cread(int fd, char *buf, int n){
+int LightnetTAP::cread(int fd, char *buf, int n){
   
   int nread;
 
@@ -56,7 +56,7 @@ int LightnetTap::cread(int fd, char *buf, int n){
  * cwrite: write routine that checks for errors and exits if an error is  *
  *         returned.                                                      *
  **************************************************************************/
-int LightnetTap::cwrite(int fd, char *buf, int n){
+int LightnetTAP::cwrite(int fd, char *buf, int n){
   
   int nwrite;
 
@@ -69,7 +69,7 @@ int LightnetTap::cwrite(int fd, char *buf, int n){
 }
 
 
-int LightnetTap::init(unsigned char addr) {
+int LightnetTAP::init(unsigned char addr) {
   /* Connect to the device */
   stringstream ss1;
   ss1 << (int)addr;
@@ -114,13 +114,12 @@ int LightnetTap::init(unsigned char addr) {
   return 1;
 }
 
-void LightnetTap::iteration() {
+void LightnetTAP::iteration() {
   /* Now read data coming from the kernel */
-    nread = read(tap_fd,buffer,sizeof(buffer));
-	//cout << "tap loop\n";
-    if(nread > 0) {
-	  ether_packet tmp;
+    while((nread = read(tap_fd,buffer,sizeof(buffer))) > 0) {
+	  Packet tmp;
       tmp.length=nread;
+	  tmp.type=ETHERNET;
       memcpy(tmp.buff,buffer,nread);
 	  lnet->push_ether_rx(tmp);
 	  cout << "`" << tmp.length << "\n";
@@ -129,7 +128,7 @@ void LightnetTap::iteration() {
 
     while(!lnet->empty_ether_tx())
 	{
-	  ether_packet tmp = lnet->pop_ether_tx();
+	  Packet tmp = lnet->pop_ether_tx();
 	  memcpy(buffer,tmp.buff,tmp.length);
 	  nwrite = write(tap_fd, buffer, tmp.length);
 	  //if(nwrite != tmp.length)
@@ -139,7 +138,7 @@ void LightnetTap::iteration() {
 }
 
 
-void LightnetTap::run() {
+void LightnetTAP::run() {
   cout << "tap start\n";
   /* Now read data coming from the kernel */
   while(1) {

@@ -32,30 +32,27 @@ using namespace std;
 #define MAXNODES 254
 
 class Lightnet;
-class LightnetTap;
+class LightnetTAP;
 class LightnetLIRC;
 
-enum packet_type {EMPTY, DATA, ACK};//empty not used
+enum PacketType {EMPTY, ETHERNET, LIRCDATA, LIRCACK};//empty not used
 
-class ether_packet
+/*class MAC
 {
   public:
-    int length;
-	int priority = 100;
-    char buff[BUFSIZE];
-	bool operator<(const ether_packet& rhs) const {return this->priority < rhs.priority;}
-};
+    char address[6];
+};*/
 
-class lirc_packet
+class Packet
 {
   public:
     int length;
 	int priority = 100;
 	int transmissions = 0;
     char buff[BUFSIZE];
-    packet_type type;
+    PacketType type;
     struct timeval sent;
-	bool operator<(const lirc_packet& rhs) const {return (this->priority)*(this->type) < (rhs.priority)*(rhs.type);}
+	bool operator<(const Packet& rhs) const {return (this->priority)*(this->type) < (rhs.priority)*(rhs.type);}
 };
 
 class Lightnet
@@ -68,8 +65,8 @@ class Lightnet
 	int init_lirc(string path);
     const unsigned char ether_mac[5] = {0x6E,0xE2,0xE0,0x7F,0xFA};
 	const unsigned char ipv4[3] = {0xC0,0xA8,0x00};
-	unsigned int mtu = 576;
-	int timeout = 5;
+	unsigned int mtu = 1280;
+	int timeout = 10;
 	int nodes = 5;
 	void run();
 	int empty_lirc_tx();
@@ -77,56 +74,56 @@ class Lightnet
 	int empty_lirc_pending();
 	int empty_ether_tx();
 	int empty_ether_rx();
-	lirc_packet pop_lirc_tx();
-	lirc_packet pop_lirc_rx();
-	lirc_packet pop_lirc_pending();
-	ether_packet pop_ether_tx();
-	ether_packet pop_ether_rx();
-	void push_lirc_tx(lirc_packet p);
-	void push_lirc_rx(lirc_packet p);
-	void push_lirc_pending(lirc_packet p);
-	void push_ether_tx(ether_packet p);
-	void push_ether_rx(ether_packet p);
-	vector<LightnetTap*> taps;
+	Packet pop_lirc_tx();
+	Packet pop_lirc_rx();
+	Packet pop_lirc_pending();
+	Packet pop_ether_tx();
+	Packet pop_ether_rx();
+	void push_lirc_tx(Packet p);
+	void push_lirc_rx(Packet p);
+	void push_lirc_pending(Packet p);
+	void push_ether_tx(Packet p);
+	void push_ether_rx(Packet p);
+	vector<LightnetTAP*> taps;
 	vector<LightnetLIRC*> lircs;
-	int debugMain = 7;
+	int debug_main = 7;
 	int crc = 0;
-	int transmissions = 5;
+	int transmissions = 1;
 	int multithread = 1;
-	lirc_packet ether_to_lirc(ether_packet& erp);
-    ether_packet lirc_to_ether(lirc_packet& irp);
-	lirc_packet lirc_ack(lirc_packet& irp);
-	int check_crc(lirc_packet& irp);
-	void append_crc(lirc_packet& irp);
-	void remove_crc(lirc_packet& irp);
-	int lirc_dst(lirc_packet& irp);
-	void remove_pending(lirc_packet& ir_ack);
+	void ether_to_lirc(Packet& p);
+    void lirc_to_ether(Packet& p);
+	Packet lirc_ack(Packet& p);
+	int check_crc(Packet& p);
+	void append_crc(Packet& p);
+	void remove_crc(Packet& p);
+	//int lirc_dst(Packet& p);
+	void remove_pending(Packet& ir_ack);
 	void clear_pending();
-	int lirc_id(lirc_packet& p);
+	int lirc_id(Packet& p);
   private:
     pthread_mutex_t lock_lirc_tx, lock_lirc_rx, lock_lirc_pending, lock_ether_tx, lock_ether_rx;
 	pthread_attr_t attr;
-    priority_queue<lirc_packet> lirc_tx;
-    priority_queue<lirc_packet> lirc_rx;
-    vector<lirc_packet> lirc_pending;
-    priority_queue<ether_packet> ether_tx;
-    priority_queue<ether_packet> ether_rx;
-	vector<unsigned char> addresses;
+    priority_queue<Packet> lirc_tx;
+    priority_queue<Packet> lirc_rx;
+    vector<Packet> lirc_pending;
+    priority_queue<Packet> ether_tx;
+    priority_queue<Packet> ether_rx;
+	//vector<MAC> addresses;
 	pthread_t p_threads[MAXTHREADS];// Threads
 	int thread_count = 0;
 };
 
 
-class LightnetTap
+class LightnetTAP
 {
 
   public:
-    LightnetTap(Lightnet* ln) : lnet(ln) {};
+    LightnetTAP(Lightnet* ln) : lnet(ln) {};
     int init(unsigned char addr);
     void run();
 	void iteration();
-	static void *helper(void *context) {((LightnetTap *)context)->run();};
-	int debugTap = 0;
+	static void *helper(void *context) {((LightnetTAP *)context)->run();};
+	int debug_tap = 0;
   private:
     int tun_alloc(char *dev, int flags);
     int cread(int fd, char *buf, int n);
@@ -147,29 +144,29 @@ class LightnetLIRC
     void run();
 	void iteration();
 	static void *helper(void *context) {((LightnetLIRC *)context)->run();};
-	const char unsigned pulseZero[4] = {0x01, 0x01, 0x00, 0x00};
-	const char unsigned pulseOne[4] = {0x01, 0x02, 0x00, 0x00};
-	const char unsigned pulseDataFlag[4] = {0x01, 0x04, 0x00, 0x00};
-	const char unsigned pulseSubFlag[4] = {0x01, 0x03, 0x00, 0x00};
-	const char unsigned pulseAckFlag[4] = {0x01, 0x05, 0x00, 0x00};
+	const char unsigned pulse_zero[4] = {0x01, 0x01, 0x00, 0x00};
+	const char unsigned pulse_one[4] = {0x01, 0x02, 0x00, 0x00};
+	const char unsigned pulse_data_flag[4] = {0x01, 0x04, 0x00, 0x00};
+	const char unsigned pulse_sub_flag[4] = {0x01, 0x03, 0x00, 0x00};
+	const char unsigned pulse_ack_flag[4] = {0x01, 0x05, 0x00, 0x00};
 	const char unsigned space[4] = {0x01, 0x01, 0x00, 0x00};
-	const int pulseZeroMin = 127;
-	const int pulseZeroMax = 383;
-	const int pulseOneMin = 385;
-	const int pulseOneMax = 639;
-	const int pulseSubFlagMin = 641;
-	const int pulseSubFlagMax = 895;
-	const int pulseDataFlagMin = 897;
-	const int pulseDataFlagMax = 1151;
-	const int pulseAckFlagMin = 1153;
-	const int pulseAckFlagMax = 1407;
+	//const int pulse_zero_min = 127;
+	//const int pulse_zero_max = 383;
+	const int pulse_one_min = 385;
+	const int pulse_one_max = 639;
+	const int pulse_sub_flag_min = 641;
+	const int pulse_sub_flag_max = 895;
+	const int pulse_data_flag_min = 897;
+	const int pulse_data_flag_max = 1151;
+	const int pulse_ack_flag_min = 1153;
+	const int pulse_ack_flag_max = 1407;
 	const int listen = 10000;
 	const int gap = 10000;
-	int debugLIRC = 6;
+	int debug_lirc = 6;
   private:
 	string path;
 	Lightnet* lnet;
-    int getLength(char lbyte, char mbyte, char rbyte);
-	int openRD();
-	FILE* openWR();
+    int get_length(char lbyte, char mbyte, char rbyte);
+	int open_rd();
+	FILE* open_wr();
 };
