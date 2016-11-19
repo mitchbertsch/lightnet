@@ -3,19 +3,20 @@
 /**************************************************************************
  * ether_to_ir: converts ether packet to lirc packet                                         *
  **************************************************************************/
-lirc_packet Lightnet::ether_to_lirc(ether_packet& erp) {
+void Lightnet::ether_to_lirc(packet& erp) {
   lirc_packet irp;
   irp.type = DATA;
-  memcpy(irp.buff,erp.buff,4);//copy flags & proto
-  irp.buff[4]=erp.buff[9];//copy dst mac
-  irp.buff[5]=erp.buff[15];//copy src mac
-  memcpy(irp.buff+6,erp.buff+16,erp.length-16);//copy ethertype & data
+  //memcpy(irp.buff,erp.buff,4);//copy flags & proto
+  //irp.buff[4]=erp.buff[9];//copy dst mac
+  //irp.buff[5]=erp.buff[15];//copy src mac
+  //memcpy(irp.buff+6,erp.buff+16,erp.length-16);//copy ethertype & data
+  memcpy(irp.buff,erp.buff,erp.length);//copy flags & proto
   int id = rand();
   char bid[2];
   bid[0] = (unsigned char)id;
   bid[1] = (unsigned char)(id>>8);
-  memcpy(irp.buff+erp.length-10,bid,2);//create rand id
-  irp.length = erp.length - 8;
+  memcpy(irp.buff+erp.length,bid,2);//create rand id
+  irp.length = erp.length + 2;
   if(crc)
     append_crc(irp);
   return irp;
@@ -28,13 +29,14 @@ ether_packet Lightnet::lirc_to_ether(lirc_packet& irp) {
   if(crc)
     remove_crc(irp);
   ether_packet erp;
-  memcpy(erp.buff,irp.buff,4); //copy flags & proto
-  memcpy(erp.buff+4,ether_mac,5); //add dst mac
-  erp.buff[9] = irp.buff[4];
-  memcpy(erp.buff+10,ether_mac,5); //add src mac
-  erp.buff[15] = irp.buff[5];
-  memcpy(erp.buff+16,irp.buff+6,irp.length-2); //copy ethertype & data
-  erp.length = irp.length + 8;
+  //memcpy(erp.buff,irp.buff,4); //copy flags & proto
+  //memcpy(erp.buff+4,ether_mac,5); //add dst mac
+  //erp.buff[9] = irp.buff[4];
+  //memcpy(erp.buff+10,ether_mac,5); //add src mac
+  //erp.buff[15] = irp.buff[5];
+  //memcpy(erp.buff+16,irp.buff+6,irp.length-2); //copy ethertype & data
+  memcpy(erp.buff,irp.buff,irp.length);//copy flags & proto
+  erp.length = irp.length - 2;
   return erp;
 }
 
@@ -54,13 +56,16 @@ lirc_packet Lightnet::lirc_ack(lirc_packet& irp) {
 
 int Lightnet::lirc_dst(lirc_packet& irp)
 {
-  for(int i = 0; i < addresses.size(); i++)
-    if(addresses[i] == irp.buff[0])
-	  return 1;
-  return 0;
+  //for(int i = 0; i < addresses.size(); i++)
+  //  if(addresses[i] == irp.buff[0])
+  //	  return 1;
+  return 1;
 }
 
 int Lightnet::check_crc(lirc_packet& irp) {
+	if(crc == 0)
+		return 1;
+		
     unsigned long checkSum = 0, bufNum = 0;
 	for(int i = 0; i < irp.length; i++){
 		bufNum = 0;
@@ -87,11 +92,13 @@ void Lightnet::append_crc(lirc_packet& irp){
 	for(int i = irp.length; i < end; i++)
 		irp.buff[i] = 0x00;
 	
-	for(int i = 0; i < irp.length; i++){
-		checkSum[i] = (checkSum[i%4])^(irp.buff[i]);
+	for(int i = 0; i < end; i++){
+		checkSum[i%4] = (checkSum[i%4])^(irp.buff[i]);
+		cerr << checkSum[i%4] << " ";
 	}
 	
 	memcpy(irp.buff+irp.length,checkSum,4);
+	cerr << endl << checkSum[0] << checkSum[1] << checkSum[2] << checkSum[3] << endl;
 	irp.length += 4;
 }
 
