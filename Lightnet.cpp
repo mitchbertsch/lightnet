@@ -3,7 +3,7 @@
 /**************************************************************************
  * ether_to_ir: converts ether packet to lirc packet                                         *
  **************************************************************************/
-void Lightnet::ether_to_lirc(packet& erp) {
+lirc_packet Lightnet::ether_to_lirc(ether_packet& erp) {
   lirc_packet irp;
   irp.type = DATA;
   //memcpy(irp.buff,erp.buff,4);//copy flags & proto
