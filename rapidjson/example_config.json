@@ -1,0 +1,22 @@
+{
+	"pulseZero": ["0x01", "0x01", "0x00", "0x00"],
+	"pulseOne": ["0x01", "0x02", "0x00", "0x00"],
+	"pulseDataFlag": ["0x01", "0x04", "0x00", "0x00"],
+	"pulseSubFlag": ["0x01", "0x03", "0x00", "0x00"],
+	"pulseAckFlag": ["0x01", "0x05", "0x00", "0x00"],
+	"space": ["0x01", "0x01", "0x00", "0x00"],
+	"pulseZeroMin": 127, 
+	"pulseZeroMax": 383, 
+	"pulseOneMin": 385, 
+	"pulseOneMax": 639, 
+	"pulseSubFlagMin": 641, 
+	"pulseSubFlagMax": 895, 
+	"pulseDataFlagMin": 897, 
+	"pulseDataFlagMax": 1151, 
+	"pulseAckFlagMin": 1153, 
+	"pulseAckFlagMax": 1407, 
+	"listen": 10000, 
+	"gap": 10000, 
+	"debugLIRC": 6
+}
+
