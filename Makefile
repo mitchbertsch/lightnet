@@ -18,11 +18,17 @@ LightnetD.o: LightnetD.cpp Lightnet.h
 Tester.o: Tester.cpp Lightnet.h
 	$(CXX) $(CXXFlags) -c Tester.cpp
 
+Profiler.o: Profiler.cpp Lightnet.h
+	$(CXX) $(CXXFlags) -c Profiler.cpp
+
 lightnetd: Lightnet.o LightnetTAP.o LightnetLIRC.o LightnetD.o
 	$(CXX) $(CXXFlags) Lightnet.o LightnetTAP.o LightnetLIRC.o LightnetD.o -o lightnetd
 
 tester: Lightnet.o LightnetTAP.o LightnetLIRC.o Tester.o
 	$(CXX) $(CXXFlags) Lightnet.o LightnetTAP.o LightnetLIRC.o Tester.o -o tester
 
+profiler: Lightnet.o LightnetTAP.o LightnetLIRC.o Profiler.o
+	$(CXX) $(CXXFlags) Lightnet.o LightnetTAP.o LightnetLIRC.o Profiler.o -o profiler
+
 clean:
-	rm *.o lightnetd tester
+	rm *.o lightnetd tester profiler
