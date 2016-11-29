@@ -342,15 +342,23 @@ void Lightnet::run()
 {
   cerr << "net start\n";
   int loop = 0;
+  if(multithread==1)
+  {
+	pid_t tid = syscall(SYS_gettid);
+    setpriority(PRIO_PROCESS,tid,19);
+  }
   while(1)
   {
-    if(debug_main>6)
-		cerr << "LIRC Itter" << endl;
     if(multithread==0)
+	{
+		if(debug_main>6)
+			cerr << "LIRC Itter" << endl;
 		lircs[0]->iteration();
-  
+	}
+	
     if(debug_main>6)
 		cerr << "LIRC Rx" << endl;
+	
     while(!empty_lirc_rx())
 	{
 	  Packet tmp = pop_lirc_rx();
@@ -372,17 +380,23 @@ void Lightnet::run()
 			push_ether_tx(tmp);
 	      }
 	    }
+		if(multithread==1)
+		  pthread_yield();
 	}
 	
-	 if(debug_main>6)
-		cerr << "LIRC Itter" << endl;
 	if(multithread==0)
+	{
+		if(debug_main>6)
+			cerr << "LIRC Itter" << endl;
 		lircs[0]->iteration();
-	 if(debug_main>6)
-		cerr << "Ether Itter" << endl;
-	if(multithread==0)
-		taps[0]->iteration();
+	}
 	
+	if(multithread==0)
+	{
+		if(debug_main>6)
+			cerr << "Ether Itter" << endl;
+		taps[0]->iteration();
+	}
 
 	while(!empty_ether_rx())
 	{
@@ -394,6 +408,8 @@ void Lightnet::run()
 		cerr << "hit2" << endl;
 		push_lirc_tx(tmp);
 		cerr << "done" << endl;
+		if(multithread==1)
+		  pthread_yield();
 	}
 	
 
@@ -402,9 +418,12 @@ void Lightnet::run()
 		if(debug_main>6)
 			cerr << "Pending Cleanup" << endl;
 		clear_pending();
+		if(multithread==1)
+		  pthread_yield();
 	}
 	loop++;
-	cerr << "loop" << loop << "\n";
+	if(debug_main>7)
+		cerr << "loop" << loop << "\n";
 	
 
 	

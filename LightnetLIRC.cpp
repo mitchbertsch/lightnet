@@ -204,6 +204,8 @@ void LightnetLIRC::iteration()
 
 void LightnetLIRC::run() {
 	cerr << "lirc start\n";
+	pid_t tid = syscall(SYS_gettid);
+    setpriority(PRIO_PROCESS,tid,-20);
 	while(1)
 		iteration();
 }

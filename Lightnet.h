@@ -8,6 +8,8 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/resource.h>
+#include <sys/syscall.h>
 #include <fcntl.h>
 #include <arpa/inet.h> 
 #include <sys/select.h>
@@ -87,7 +89,7 @@ class Lightnet
 	void push_ether_rx(Packet p);
 	vector<LightnetTAP*> taps;
 	vector<LightnetLIRC*> lircs;
-	int debug_main = 7;
+	int debug_main = 5;
 	int crc = 1;
 	int transmissions = 3;
 	int multithread = 1;
@@ -164,7 +166,7 @@ class LightnetLIRC
 	const int pulse_ack_flag_max = 2560;
 	const int listen = 10000;
 	const int gap = 10000;
-	int debug_lirc = 6;
+	int debug_lirc = 7;
   private:
 	string path;
 	Lightnet* lnet;

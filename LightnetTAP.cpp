@@ -123,6 +123,8 @@ void LightnetTAP::iteration() {
       memcpy(tmp.buff,buffer,nread);
 	  lnet->push_ether_rx(tmp);
 	  cout << "`" << tmp.length << "\n";
+	  if(lnet->multithread==1)
+		  pthread_yield();
     }
 	
 
@@ -132,8 +134,8 @@ void LightnetTAP::iteration() {
 	  memcpy(buffer,tmp.buff,tmp.length);
 	  nwrite = write(tap_fd, buffer, tmp.length);
 	  //if(nwrite != tmp.length)
-        
-	  
+      if(lnet->multithread==1)
+		  pthread_yield();
 	}
 }
 
@@ -141,6 +143,8 @@ void LightnetTAP::iteration() {
 void LightnetTAP::run() {
   cout << "tap start\n";
   /* Now read data coming from the kernel */
+  pid_t tid = syscall(SYS_gettid);
+  setpriority(PRIO_PROCESS,tid,19);
   while(1) {
     iteration();
     pthread_yield();
