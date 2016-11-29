@@ -22,6 +22,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <boost/crc.hpp>
 
 using namespace std;
 
@@ -87,19 +88,20 @@ class Lightnet
 	vector<LightnetTAP*> taps;
 	vector<LightnetLIRC*> lircs;
 	int debug_main = 7;
-	int crc = 0;
-	int transmissions = 1;
+	int crc = 1;
+	int transmissions = 3;
 	int multithread = 1;
 	void ether_to_lirc(Packet& p);
     void lirc_to_ether(Packet& p);
 	Packet lirc_ack(Packet& p);
 	int check_crc(Packet& p);
+	int check_unicast(Packet& p);
 	void append_crc(Packet& p);
 	void remove_crc(Packet& p);
 	//int lirc_dst(Packet& p);
 	void remove_pending(Packet& ir_ack);
 	void clear_pending();
-	int lirc_id(Packet& p);
+	unsigned int lirc_id(Packet& p);
   private:
     pthread_mutex_t lock_lirc_tx, lock_lirc_rx, lock_lirc_pending, lock_ether_tx, lock_ether_rx;
 	pthread_attr_t attr;
@@ -108,7 +110,7 @@ class Lightnet
     vector<Packet> lirc_pending;
     priority_queue<Packet> ether_tx;
     priority_queue<Packet> ether_rx;
-	//vector<MAC> addresses;
+	vector<unsigned char> addresses;
 	pthread_t p_threads[MAXTHREADS];// Threads
 	int thread_count = 0;
 };

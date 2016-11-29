@@ -7,11 +7,11 @@ void Lightnet::ether_to_lirc(Packet& p) {
   if(p.type != ETHERNET)
     cerr << "ETHER_TO_LIRC: Wrong Packet Type\n";
   p.type = LIRCDATA;
-  int id = rand();
-  p.buff[p.length] = (unsigned char)id;
-  p.buff[p.length+1] = (unsigned char)(id>>8);
-  p.buff[p.length+2] = (unsigned char)(id>>16);
-  p.buff[p.length+3] = (unsigned char)(id>>24);
+  unsigned int id = rand();
+  p.buff[p.length] = id>>24 & 0xff;
+  p.buff[p.length+1] = id>>16 & 0xff;
+  p.buff[p.length+2] = id>>8 & 0xff;
+  p.buff[p.length+3] = id & 0xff;
   p.length += 4;
   if(crc)
     append_crc(p);
@@ -32,96 +32,94 @@ void Lightnet::lirc_to_ether(Packet& p) {
 Packet Lightnet::lirc_ack(Packet& p) {
   if(p.type != LIRCDATA)
     cerr << "LIRC_ACK: Wrong Packet Type\n";
+
   Packet ir_ack;
   ir_ack.length = 10;
   memcpy(ir_ack.buff,p.buff+10,6);
   if(crc)
-    memcpy(ir_ack.buff+4,p.buff+p.length-8,4); //copy id
+    memcpy(ir_ack.buff+6,p.buff+p.length-8,4); //copy id
   else
-    memcpy(ir_ack.buff+4,p.buff+p.length-4,4); //copy id
+	memcpy(ir_ack.buff+6,p.buff+p.length-4,4); //copy id
   ir_ack.type=LIRCACK;
   return ir_ack;
 }
 
-//********************************************************************************************************************
-/*int Lightnet::lirc_dst(Packet& p)
+int Lightnet::check_unicast(Packet& p)
 {
-  
-  for(int i = 0; i < addresses.size(); i++)
-    if(addresses[i] == p.buff[0])
-  	  return 1;
-  return 1;
-}*/
+  if(p.buff[4]==ether_mac[0] && p.buff[5]==ether_mac[1] && p.buff[6]==ether_mac[2] && p.buff[7]==ether_mac[3] && p.buff[8]==ether_mac[4])
+    return 1;
+  else
+    return 0;
+}
 
 int Lightnet::check_crc(Packet& p) {
 	if(crc == 0 || p.type != LIRCDATA)
 		return 1;
 		
-    /*unsigned long checkSum = 0, bufNum = 0;
-	for(int i = 0; i < irp.length; i++){
-		bufNum = 0;
-		if(i+3<irp.length)
-			bufNum = ((int)irp.buff[i])<<24+((int)irp.buff[i+1])<<16+((int)irp.buff[i+2])<<8+((int)irp.buff[i+3]);
-		else if(i+2<irp.length)
-			bufNum = ((int)irp.buff[i])<<24+((int)irp.buff[i+1])<<16+((int)irp.buff[i+2])<<8;
-		else if(i+1<irp.length)
-			bufNum = ((int)irp.buff[i])<<24+((int)irp.buff[i+1])<<16;
-		else if(i<irp.length)
-			bufNum = ((int)irp.buff[i])<<24;
-		checkSum = checkSum^bufNum;
-	}
+    boost::crc_32_type crc1;
+	crc1.process_bytes(p.buff,p.length-4);
 	
-	if(checkSum == 0)
+	unsigned int checkSum = (((unsigned int)(p.buff[p.length-4]))<<24)+(((unsigned int)(p.buff[p.length-3]))<<16)+(((unsigned int)(p.buff[p.length-2]))<<8)+(unsigned int)(p.buff[p.length-1]);
+	cerr << checkSum << " " << crc1.checksum() << endl;
+	if(checkSum == crc1.checksum())
 		return 1;
-	else*/
+	else
 		return 0;
 }
 
 void Lightnet::append_crc(Packet& p){
 	if(p.type == LIRCDATA)
 	{
-		/*char checkSum[4] = {0,0,0,0};
-		int end = irp.length + (irp.length % 4);
-		for(int i = irp.length; i < end; i++)
-			irp.buff[i] = 0x00;
-		
-		for(int i = 0; i < end; i++){
-			checkSum[i%4] = (checkSum[i%4])^(irp.buff[i]);
-			cerr << checkSum[i%4] << " ";
-		}
-		
-		memcpy(irp.buff+irp.length,checkSum,4);
-		cerr << endl << checkSum[0] << checkSum[1] << checkSum[2] << checkSum[3] << endl;*/
+		boost::crc_32_type crc1;
+		crc1.process_bytes(p.buff,p.length);
+		p.buff[p.length] = crc1.checksum()>>24 & 0xff;
+		p.buff[p.length+1] = crc1.checksum()>>16 & 0xff;
+		p.buff[p.length+2] = crc1.checksum()>>8 & 0xff;
+		p.buff[p.length+3] = crc1.checksum() & 0xff;
 		p.length += 4;
+		cerr << crc1.checksum() << endl;
 	}
 }
-//********************************************************************************************************************
+
 void Lightnet::remove_crc(Packet& p){
 	if(p.type == LIRCDATA)
 		p.length -= 4;
 }
 
-int Lightnet::lirc_id(Packet& p)
+unsigned int Lightnet::lirc_id(Packet& p)
 {
   if(p.type == ETHERNET)
+  {
 	cerr << "LIRC_ID: Wrong Packet Type\n";
+	return 0;
+  }
   int start = p.length-4;
   if(crc && p.type == LIRCDATA)
-    start = p.length-10;
-  return (int)(p.buff[start])<<24+(int)(p.buff[start+1])<<16+(int)(p.buff[start+2])<<8+(int)(p.buff[start+3]);
+    start = p.length-8;
+  return (((unsigned int)(p.buff[start]))<<24)+(((unsigned int)(p.buff[start+1]))<<16)+(((unsigned int)(p.buff[start+2]))<<8)+(unsigned int)(p.buff[start+3]);
 }
 
 void Lightnet::remove_pending(Packet& ir_ack)
 {
-  int id = lirc_id(ir_ack);
-  pthread_mutex_lock(&lock_lirc_pending);
-  for(int i = 0; i < lirc_pending.size(); i++)
-    if(lirc_id(lirc_pending[i])==id)
-	{
-	  lirc_pending.erase(lirc_pending.begin()+i);
-	  break;
-	}
-  pthread_mutex_unlock(&lock_lirc_pending);
+  int found = 0;
+  for(int i = 0; i < addresses.size(); i++)
+    if(addresses[i]==ir_ack.buff[5])
+	  found = 1;
+  cerr << "address: " << (int)(ir_ack.buff[5]) << "*" << found << endl;
+  if(found == 1)
+  {
+    unsigned int id = lirc_id(ir_ack);
+	cerr << "find: " << id << endl;
+    pthread_mutex_lock(&lock_lirc_pending);
+    for(int i = 0; i < lirc_pending.size(); i++)
+      if(lirc_id(lirc_pending[i])==id)
+	  {
+	    lirc_pending.erase(lirc_pending.begin()+i);
+		cerr << "found: " << id << endl;
+	    break;
+	  }
+    pthread_mutex_unlock(&lock_lirc_pending);
+  }
 }
 
 void Lightnet::clear_pending()
@@ -134,7 +132,10 @@ void Lightnet::clear_pending()
     //cerr << "pending time: " << (current.tv_sec-lirc_pending[i].sent.tv_sec) << endl;
     if((current.tv_sec-lirc_pending[i].sent.tv_sec) >= timeout)
       if(lirc_pending[i].transmissions>=transmissions)
+	  {
 	    lirc_pending.erase(lirc_pending.begin()+i--);
+		cerr <<  "timeout: " << lirc_id(lirc_pending[i]) << endl;
+	  }
 	  else
 	  {
 	    push_lirc_tx(lirc_pending[i]);
@@ -299,7 +300,7 @@ int Lightnet::init_tap(unsigned char addr)
   if(ltap->init(addr))
   {
     taps.push_back(ltap);
-	//addresses.push_back(addr);
+	addresses.push_back(addr);
 	pthread_create(&p_threads[thread_count++], &attr, &LightnetTAP::helper, ltap);
 	return 1;
   }else
@@ -326,7 +327,7 @@ int Lightnet::init(unsigned char addr, string path)
   if(ltap->init(addr))
   {
     taps.push_back(ltap);
-	//addresses.push_back(addr);
+	addresses.push_back(addr);
 	if(llirc->init(path))
     {
       lircs.push_back(llirc);
@@ -365,8 +366,8 @@ void Lightnet::run()
 	      
 	      if(check_crc(tmp))
 	      {
-	        Packet ir_ack = lirc_ack(tmp);
-	        push_lirc_tx(ir_ack);
+			if(check_unicast(tmp))
+	          push_lirc_tx(lirc_ack(tmp));
 			lirc_to_ether(tmp);
 			push_ether_tx(tmp);
 	      }

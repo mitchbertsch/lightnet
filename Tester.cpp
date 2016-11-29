@@ -15,7 +15,7 @@ void printBuffer(char buffer[],int size)
                             cerr << "0";
                     }
                 }*/
-		printf("%02x",buffer[i] & 0xff);
+		printf("%02x|",buffer[i] & 0xff);
 	}
     cerr << endl;
 }
@@ -73,10 +73,14 @@ int main(int argc, char *argv[])
 	{
 	  Packet tmp = l.pop_lirc_rx();
 	  cerr << "irpacket: " << tmp.type << " " << tmp.length << endl;
-	  printBuffer(tmp.buff,tmp.length);
+	  //printBuffer(tmp.buff,tmp.length-8);
+	  //printBuffer(tmp.buff+tmp.length-8,4);
+	  //printBuffer(tmp.buff+tmp.length-4,4);
 	 
 	    if(tmp.type == LIRCACK && tmp.length == 10)
 		{
+		  printBuffer(tmp.buff,tmp.length);
+		  cerr << "remove_pending" << endl;
 		  l.remove_pending(tmp);
 		  cerr << l.empty_lirc_pending() << endl;
 		}
@@ -85,8 +89,15 @@ int main(int argc, char *argv[])
 	      
 	      if(l.check_crc(tmp))
 	      {
-			Packet ir_ack = l.lirc_ack(tmp);
-	        l.push_lirc_tx(ir_ack);
+			if(l.check_unicast(tmp))
+			{
+	          Packet tmp_ack = l.lirc_ack(tmp);
+			  cerr << "ack\n";
+			  printBuffer(tmp.buff,tmp.length);
+			  printBuffer(tmp_ack.buff,tmp_ack.length);
+			  cerr << "ackend\n";
+			  l.push_lirc_tx(tmp_ack);
+			}
 			l.lirc_to_ether(tmp);
 			cout << "rd\n";
 			rdpacket(tmp);
@@ -107,6 +118,9 @@ int main(int argc, char *argv[])
 		cerr << "hit" << endl;
 		l.ether_to_lirc(tmp);
 		cerr << "hit2" << endl;
+	    printBuffer(tmp.buff,tmp.length-8);
+	    //printBuffer(tmp.buff+tmp.length-8,4);
+	    //printBuffer(tmp.buff+tmp.length-4,4);
 		l.push_lirc_tx(tmp);
 		cerr << "done" << endl;
 	}
@@ -117,21 +131,14 @@ int main(int argc, char *argv[])
 		l.clear_pending();
 	}
 	
-	if(loop >= 20)//create packet to send and decode
+	if(loop % 20 == 0)//create packet to send and decode
 	{
-	 Packet ether_tmp = mkpacket(0xff,0x1,l);
-	  //printBuffer(ether_tmp.buff,ether_tmp.length);
-	  l.push_ether_rx(ether_tmp);
+	 Packet tmp = mkpacket(0xff,0x1,l);
+	  l.push_ether_rx(tmp);
 	}
 	loop++;
 	cerr << "loop" << loop << "\n";
 	//l.taps[0]->iteration();
-	/*while(!l.empty_ether_rx())
-	{
-	  Packet ether_tmp = l.pop_ether_rx();
-	  printBuffer(ether_tmp.buff,ether_tmp.length);
-	  l.push_ether_tx(ether_tmp);
-	}*/
 	
   }
   cerr << "end";
