@@ -90,8 +90,8 @@ class Lightnet
 	vector<LightnetTAP*> taps;
 	vector<LightnetLIRC*> lircs;
 	int debug_main = 5;
-	int crc = 1;
-	int transmissions = 3;
+	int crc = 0;
+	int transmissions = 1;
 	int multithread = 1;
 	void ether_to_lirc(Packet& p);
     void lirc_to_ether(Packet& p);
