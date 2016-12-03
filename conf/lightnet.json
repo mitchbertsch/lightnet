@@ -1,0 +1,32 @@
+{
+	"debug": 2,
+	"ethernet_mac": "6e:e2:e0:7f:fa",
+	"ipv4": "192.168.0",
+	"mtu": 576,
+	"crc": 1,
+	"nodes": 5,
+	"timeout": 20,
+	"transmissions": 2,
+	"tap":{
+		"id": 1
+	},
+	"lirc":{
+		"path": "/dev/lirc0",
+		"pulse_zero": 257,
+		"pulse_one": 769,
+		"pulse_data_flag": 1281,
+		"pulse_sub_flag": 1793,
+		"pulse_ack_flag": 2305,
+		"space": 257,
+		"pulse_one_min": 512, 
+		"pulse_one_max": 1024, 
+		"pulse_sub_flag_min": 1025, 
+		"pulse_sub_flag_max": 1536, 
+		"pulse_data_flag_min": 1537, 
+		"pulse_data_flag_max": 2048, 
+		"pulse_ack_flag_min": 2049, 
+		"pulse_ack_flag_max": 2560, 
+		"listen": 10000, 
+		"gap": 10000
+	}
+}

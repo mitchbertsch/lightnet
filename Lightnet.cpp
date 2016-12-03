@@ -23,10 +23,10 @@ void Lightnet::ether_to_lirc(Packet& p) {
 void Lightnet::lirc_to_ether(Packet& p) {
   if(p.type != LIRCDATA)
     cerr << "LIRC_TO_ETHER: Wrong Packet Type\n";
-  p.type = ETHERNET;
   if(crc)
     remove_crc(p);
   p.length -= 4;
+  p.type = ETHERNET;
 }
 
 Packet Lightnet::lirc_ack(Packet& p) {
@@ -60,11 +60,16 @@ int Lightnet::check_crc(Packet& p) {
 	crc1.process_bytes(p.buff,p.length-4);
 	
 	unsigned int checkSum = (((unsigned int)(p.buff[p.length-4]))<<24)+(((unsigned int)(p.buff[p.length-3]))<<16)+(((unsigned int)(p.buff[p.length-2]))<<8)+(unsigned int)(p.buff[p.length-1]);
-	cerr << checkSum << " " << crc1.checksum() << endl;
+	if(debug)
+		cerr << checkSum << " " << crc1.checksum() << endl;
 	if(checkSum == crc1.checksum())
 		return 1;
 	else
+	{
+		crc_errors++;
+		syslog(LOG_NOTICE, "CRC Error, Count: %d", crc_errors);
 		return 0;
+	}
 }
 
 void Lightnet::append_crc(Packet& p){
@@ -77,7 +82,6 @@ void Lightnet::append_crc(Packet& p){
 		p.buff[p.length+2] = crc1.checksum()>>8 & 0xff;
 		p.buff[p.length+3] = crc1.checksum() & 0xff;
 		p.length += 4;
-		cerr << crc1.checksum() << endl;
 	}
 }
 
@@ -105,17 +109,14 @@ void Lightnet::remove_pending(Packet& ir_ack)
   for(int i = 0; i < addresses.size(); i++)
     if(addresses[i]==ir_ack.buff[5])
 	  found = 1;
-  cerr << "address: " << (int)(ir_ack.buff[5]) << "*" << found << endl;
   if(found == 1)
   {
     unsigned int id = lirc_id(ir_ack);
-	cerr << "find: " << id << endl;
     pthread_mutex_lock(&lock_lirc_pending);
     for(int i = 0; i < lirc_pending.size(); i++)
       if(lirc_id(lirc_pending[i])==id)
 	  {
 	    lirc_pending.erase(lirc_pending.begin()+i);
-		cerr << "found: " << id << endl;
 	    break;
 	  }
     pthread_mutex_unlock(&lock_lirc_pending);
@@ -129,12 +130,14 @@ void Lightnet::clear_pending()
   pthread_mutex_lock(&lock_lirc_pending);
   for(int i = 0; i < lirc_pending.size(); i++)
   {
-    //cerr << "pending time: " << (current.tv_sec-lirc_pending[i].sent.tv_sec) << endl;
     if((current.tv_sec-lirc_pending[i].sent.tv_sec) >= timeout)
       if(lirc_pending[i].transmissions>=transmissions)
 	  {
 	    lirc_pending.erase(lirc_pending.begin()+i--);
-		cerr <<  "timeout: " << lirc_id(lirc_pending[i]) << endl;
+		if(debug)
+			cerr <<  "timeout: " << lirc_id(lirc_pending[i]) << endl;
+		ack_errors++;
+		syslog(LOG_NOTICE, "ACK Transmissions Timeout Error, Count: %d", ack_errors);
 	  }
 	  else
 	  {
@@ -340,34 +343,31 @@ int Lightnet::init(unsigned char addr, string path)
 
 void Lightnet::run()
 {
-  cerr << "net start\n";
+  cerr << "main start\n";
   int loop = 0;
   if(multithread==1)
   {
 	pid_t tid = syscall(SYS_gettid);
     setpriority(PRIO_PROCESS,tid,19);
   }
+  
   while(1)
   {
     if(multithread==0)
 	{
-		if(debug_main>6)
-			cerr << "LIRC Itter" << endl;
 		lircs[0]->iteration();
 	}
 	
-    if(debug_main>6)
-		cerr << "LIRC Rx" << endl;
 	
     while(!empty_lirc_rx())
 	{
 	  Packet tmp = pop_lirc_rx();
-	  cerr << "irpacket: " << tmp.type << " " << tmp.length << endl;
-	  //if(lirc_dst(ir_tmp))
+	  if(debug)
+	    cerr << "lircpacket: " << tmp.type << " " << tmp.length << endl;
+		
 	    if(tmp.type == LIRCACK && tmp.length == 10)
 		{
 		  remove_pending(tmp);
-		  cerr << empty_lirc_pending() << endl;
 		}
 	    if(tmp.type == LIRCDATA && tmp.length > 22)
 	    {
@@ -386,28 +386,19 @@ void Lightnet::run()
 	
 	if(multithread==0)
 	{
-		if(debug_main>6)
-			cerr << "LIRC Itter" << endl;
 		lircs[0]->iteration();
 	}
 	
 	if(multithread==0)
 	{
-		if(debug_main>6)
-			cerr << "Ether Itter" << endl;
 		taps[0]->iteration();
 	}
 
 	while(!empty_ether_rx())
 	{
-		if(debug_main>6)
-			cerr << "Ether Rx" << endl;
 		Packet tmp = pop_ether_rx();
-		cerr << "hit" << endl;
 		ether_to_lirc(tmp);
-		cerr << "hit2" << endl;
 		push_lirc_tx(tmp);
-		cerr << "done" << endl;
 		if(multithread==1)
 		  pthread_yield();
 	}
@@ -415,18 +406,11 @@ void Lightnet::run()
 
 	if(!empty_lirc_pending())
 	{
-		if(debug_main>6)
-			cerr << "Pending Cleanup" << endl;
 		clear_pending();
 		if(multithread==1)
 		  pthread_yield();
 	}
 	loop++;
-	if(debug_main>7)
-		cerr << "loop" << loop << "\n";
-	
-
-	
   }
   cerr << "end";
 

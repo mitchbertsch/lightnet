@@ -36,38 +36,6 @@ int LightnetTAP::tun_alloc(char *dev, int flags) {
   return fd;
 }
 
-/**************************************************************************
- * cread: read routine that checks for errors and exits if an error is    *
- *        returned.                                                       *
- **************************************************************************/
-int LightnetTAP::cread(int fd, char *buf, int n){
-  
-  int nread;
-
-  if((nread=read(fd, buf, n))<0){
-    perror("Reading data");
-	close(fd);
-    exit(1);
-  }
-  return nread;
-}
-
-/**************************************************************************
- * cwrite: write routine that checks for errors and exits if an error is  *
- *         returned.                                                      *
- **************************************************************************/
-int LightnetTAP::cwrite(int fd, char *buf, int n){
-  
-  int nwrite;
-
-  if((nwrite=write(fd, buf, n))<0){
-    perror("Writing data");
-	close(fd);
-    exit(1);
-  }
-  return nwrite;
-}
-
 
 int LightnetTAP::init(unsigned char addr) {
   /* Connect to the device */
@@ -92,7 +60,6 @@ int LightnetTAP::init(unsigned char addr) {
   ss5 << (int)(lnet->ipv4[1]) << ".";
   ss5 << (int)(lnet->ipv4[2]) << ".";;
   command += ss5.str()+ss1.str() + " ";
-  cerr << command << endl;
   system(command.c_str());
   usleep(10000);
   string command2;
@@ -103,7 +70,6 @@ int LightnetTAP::init(unsigned char addr) {
 	  ss6 << (int)i;
 	  ss7 << hex << setfill('0') << setw(2) << (int)i;
 	  command2 = "./arp.sh " + tap_name + " " + ss5.str() + ss6.str() + " " + ss3.str() + ss7.str();
-	  cerr << command2 << endl;
 	  system(command2.c_str());
       usleep(10000);
     }
@@ -122,7 +88,6 @@ void LightnetTAP::iteration() {
 	  tmp.type=ETHERNET;
       memcpy(tmp.buff,buffer,nread);
 	  lnet->push_ether_rx(tmp);
-	  cout << "`" << tmp.length << "\n";
 	  if(lnet->multithread==1)
 		  pthread_yield();
     }
@@ -141,12 +106,11 @@ void LightnetTAP::iteration() {
 
 
 void LightnetTAP::run() {
-  cout << "tap start\n";
+  cerr << "tap start\n";
   /* Now read data coming from the kernel */
   pid_t tid = syscall(SYS_gettid);
   setpriority(PRIO_PROCESS,tid,19);
-  while(1) {
+  usleep(1000000);
+  while(1)
     iteration();
-    pthread_yield();
-  }
 }

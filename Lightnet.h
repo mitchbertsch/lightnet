@@ -15,6 +15,7 @@
 #include <sys/select.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <syslog.h>
 #include <stdarg.h>
 #include <pthread.h>
 #include <queue>
@@ -25,6 +26,9 @@
 #include <iomanip>
 #include <fstream>
 #include <boost/crc.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/optional/optional.hpp>
 
 using namespace std;
 
@@ -66,8 +70,8 @@ class Lightnet
 	int init(unsigned char addr, string path);
     int init_tap(unsigned char addr);
 	int init_lirc(string path);
-    const unsigned char ether_mac[5] = {0x6E,0xE2,0xE0,0x7F,0xFA};
-	const unsigned char ipv4[3] = {0xC0,0xA8,0x00};
+    unsigned char ether_mac[5] = {0x6E,0xE2,0xE0,0x7F,0xFA};
+	unsigned char ipv4[3] = {0xC0,0xA8,0x00};
 	unsigned int mtu = 1280;
 	int timeout = 10;
 	int nodes = 5;
@@ -89,10 +93,12 @@ class Lightnet
 	void push_ether_rx(Packet p);
 	vector<LightnetTAP*> taps;
 	vector<LightnetLIRC*> lircs;
-	int debug_main = 5;
-	int crc = 0;
-	int transmissions = 1;
+	int debug = 0;
+	int crc = 1;
+	int transmissions = 3;
 	int multithread = 1;
+	int crc_errors = 0;
+	int ack_errors = 0;
 	void ether_to_lirc(Packet& p);
     void lirc_to_ether(Packet& p);
 	Packet lirc_ack(Packet& p);
@@ -127,7 +133,6 @@ class LightnetTAP
     void run();
 	void iteration();
 	static void *helper(void *context) {((LightnetTAP *)context)->run();};
-	int debug_tap = 0;
   private:
     int tun_alloc(char *dev, int flags);
     int cread(int fd, char *buf, int n);
@@ -148,25 +153,22 @@ class LightnetLIRC
     void run();
 	void iteration();
 	static void *helper(void *context) {((LightnetLIRC *)context)->run();};
-	const char unsigned pulse_zero[4] = {0x01, 0x01, 0x00, 0x00};
-	const char unsigned pulse_one[4] = {0x01, 0x03, 0x00, 0x00};
-	const char unsigned pulse_data_flag[4] = {0x01, 0x07, 0x00, 0x00};
-	const char unsigned pulse_sub_flag[4] = {0x01, 0x05, 0x00, 0x00};
-	const char unsigned pulse_ack_flag[4] = {0x01, 0x09, 0x00, 0x00};
-	const char unsigned space[4] = {0x01, 0x01, 0x00, 0x00};
-	//const int pulse_zero_min = 127;
-	//const int pulse_zero_max = 383;
-	const int pulse_one_min = 512;
-	const int pulse_one_max = 1024;
-	const int pulse_sub_flag_min = 1025;
-	const int pulse_sub_flag_max = 1536;
-	const int pulse_data_flag_min = 1537;
-	const int pulse_data_flag_max = 2048;
-	const int pulse_ack_flag_min = 2049;
-	const int pulse_ack_flag_max = 2560;
-	const int listen = 10000;
-	const int gap = 10000;
-	int debug_lirc = 7;
+	char unsigned pulse_zero[4] = {0x01, 0x01, 0x00, 0x00};
+	char unsigned pulse_one[4] = {0x01, 0x03, 0x00, 0x00};
+	char unsigned pulse_data_flag[4] = {0x01, 0x07, 0x00, 0x00};
+	char unsigned pulse_sub_flag[4] = {0x01, 0x05, 0x00, 0x00};
+	char unsigned pulse_ack_flag[4] = {0x01, 0x09, 0x00, 0x00};
+	char unsigned space[4] = {0x01, 0x01, 0x00, 0x00};
+	int pulse_one_min = 512;
+	int pulse_one_max = 1024;
+	int pulse_sub_flag_min = 1025;
+	int pulse_sub_flag_max = 1536;
+	int pulse_data_flag_min = 1537;
+	int pulse_data_flag_max = 2048;
+	int pulse_ack_flag_min = 2049;
+	int pulse_ack_flag_max = 2560;
+	int listen = 10000;
+	int gap = 10000;
   private:
 	string path;
 	Lightnet* lnet;

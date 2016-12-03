@@ -44,8 +44,6 @@ void LightnetLIRC::iteration()
 	FILE* file;
 	int fd, packetIndex, byteIndex, byteInt, rcycles, cycles, nread, pulseLength;
 	
-	if(debug_lirc>6)
-		cerr << "read mode\n";
 	fd = open_rd();
 	packetIndex = 0;
 	byteIndex = 0;
@@ -74,7 +72,7 @@ void LightnetLIRC::iteration()
 						byteInt = 0;
 						byteIndex = 0;
 					}
-					if(debug_lirc>6)
+					if(lnet->debug>1)
 						cerr << "ackflag\n";
 				}else if (pulseLength >= pulse_data_flag_min && pulseLength <= pulse_data_flag_max) {
 					if(packetIndex != 0)
@@ -90,10 +88,10 @@ void LightnetLIRC::iteration()
 						byteInt = 0;
 						byteIndex = 0;
 					}
-					if(debug_lirc>6)
+					if(lnet->debug>1)
 						cerr << "dataflag\n";
 				}else if (pulseLength >= pulse_sub_flag_min && pulseLength <= pulse_sub_flag_max) {
-					if(debug_lirc)
+					if(lnet->debug>1)
 						cerr << "subflag\n";
 				}else{
 					byteInt*=2;
@@ -112,15 +110,13 @@ void LightnetLIRC::iteration()
 					{
 						byteIndex++;
 					}
-					if(debug_lirc>7)
-						cerr << "byte\n";
 				}
 				cycles = rcycles;
 			}
 			else
 			{
 				if (pulseLength > gap) {
-					if(debug_lirc>6)
+					if(lnet->debug>1)
 						cerr << "reset\n";
 					rcycles = (rand() % MAXNODES + 1);
 					memset(packet,0,BUFSIZE);
@@ -136,8 +132,6 @@ void LightnetLIRC::iteration()
 		}
 	}
 	close(fd);
-    if(debug_lirc>6)
-		cerr << "write mode\n";
 	//usleep(units);
 	
 					
@@ -181,7 +175,8 @@ void LightnetLIRC::iteration()
                 }
 
 			packetIndex = packetIndex + subSize;
-			cerr << "pi: " << packetIndex << "/" << ir_tmp.length << endl;
+			if(lnet->debug>1)
+				cerr << "send pi: " << packetIndex << "/" << ir_tmp.length << endl;
                // write another terminal flag
 			if(ir_tmp.type == LIRCACK)
 				fwrite(pulse_ack_flag,1,4,file);
@@ -192,7 +187,7 @@ void LightnetLIRC::iteration()
                fflush(file);
 		}
 		fclose(file);
-		if(ir_tmp.type == LIRCDATA)
+		if(ir_tmp.type == LIRCDATA && lnet->check_unicast(ir_tmp))
 		{
 			gettimeofday(&(ir_tmp.sent), NULL); 
 			ir_tmp.transmissions++;
@@ -206,6 +201,7 @@ void LightnetLIRC::run() {
 	cerr << "lirc start\n";
 	pid_t tid = syscall(SYS_gettid);
     setpriority(PRIO_PROCESS,tid,-20);
+	usleep(1000000);
 	while(1)
 		iteration();
 }
