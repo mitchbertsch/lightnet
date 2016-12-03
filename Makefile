@@ -18,17 +18,32 @@ LightnetD.o: LightnetD.cpp Lightnet.h
 Tester.o: Tester.cpp Lightnet.h
 	$(CXX) $(CXXFlags) -c Tester.cpp
 
-Profiler.o: Profiler.cpp Lightnet.h
-	$(CXX) $(CXXFlags) -c Profiler.cpp
-
 lightnetd: Lightnet.o LightnetTAP.o LightnetLIRC.o LightnetD.o
 	$(CXX) $(CXXFlags) Lightnet.o LightnetTAP.o LightnetLIRC.o LightnetD.o -o lightnetd
 
 tester: Lightnet.o LightnetTAP.o LightnetLIRC.o Tester.o
 	$(CXX) $(CXXFlags) Lightnet.o LightnetTAP.o LightnetLIRC.o Tester.o -o tester
 
-profiler: Lightnet.o LightnetTAP.o LightnetLIRC.o Profiler.o
-	$(CXX) $(CXXFlags) Lightnet.o LightnetTAP.o LightnetLIRC.o Profiler.o -o profiler
-
 clean:
-	rm *.o lightnetd tester profiler
+	rm *.o lightnetd tester
+
+install: lightnetd tester profiler
+	mkdir /opt/lightnet
+	mkdir /opt/lightnet/bin
+	mkdir /opt/lightnet/doc
+	sudo cp -r doc /opt/lightnet/doc
+	sudo cp tester /opt/lightnet/bin
+	sudo cp profiler /opt/lightnet/bin
+	sudo cp lightnetd /opt/lightnet/bin
+	sudo cp tap.sh /opt/lightnet/bin
+	sudo cp arp.sh /opt/lightnet/bin
+	sudo cp conf/lightnet.json /opt/lightnet/lightnet.json
+	sudo cp conf/config.txt /boot/config.txt
+	sudo cp conf/cmdline.txt /boot/cmdline.txt
+	sudo cp conf/olsrd.conf /etc/olsrd/olsrd.conf
+	sudo cp conf/dhcpcd.conf /etc/dhcpcd.conf
+	sudo cp conf/dhcpd.conf /etc/dhcp/dhcpd.conf
+	sudo cp conf/interfaces /etc/network/interfaces
+	sudo cp conf/isc-dhcp-server /etc/default/isc-dhcp-server
+	sudo cp conf/lightnetd /etc/init.d/lightnetd
+	sudo chmod 744 /etc/init.d/lightnetd
