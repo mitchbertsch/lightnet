@@ -15,8 +15,8 @@
 #		Modified for Lightnet
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DIR=/home/pi/lightnet/
-DAEMON=/home/pi/lightnet/lightnetd
+DIR=/opt/lightnet/bin/
+DAEMON=/opt/lightnet/bin/lightnetd
 NAME=lightnetd
 DESC=lightnetd
 
