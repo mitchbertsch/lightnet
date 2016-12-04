@@ -1,11 +1,11 @@
 {
-	"debug": 2,
+	"debug": 0,
 	"ethernet_mac": "6e:e2:e0:7f:fa",
 	"ipv4": "192.168.0",
 	"mtu": 576,
 	"crc": 1,
 	"nodes": 5,
-	"timeout": 20,
+	"timeout": 45,
 	"transmissions": 2,
 	"tap":{
 		"id": 1
