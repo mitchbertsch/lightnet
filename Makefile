@@ -1,7 +1,7 @@
 CXXFlags = -std=c++11 -lpthread
 CXX = g++
 
-all: lightnetd
+all: lightnetd tester profiler
 
 Lightnet.o: Lightnet.cpp Lightnet.h
 	$(CXX) $(CXXFlags) -c Lightnet.cpp
@@ -24,8 +24,12 @@ lightnetd: Lightnet.o LightnetTAP.o LightnetLIRC.o LightnetD.o
 tester: Lightnet.o LightnetTAP.o LightnetLIRC.o Tester.o
 	$(CXX) $(CXXFlags) Lightnet.o LightnetTAP.o LightnetLIRC.o Tester.o -o tester
 
+profiler: Profiler.cpp
+	$(CXX) $(CXXFlags) Profiler.cpp -o profiler
+
+
 clean:
-	rm *.o lightnetd tester
+	rm *.o lightnetd tester profiler
 
 install: lightnetd tester profiler
 	mkdir /opt/lightnet
@@ -41,7 +45,6 @@ install: lightnetd tester profiler
 	sudo cp conf/config.txt /boot/config.txt
 	sudo cp conf/cmdline.txt /boot/cmdline.txt
 	sudo cp conf/olsrd.conf /etc/olsrd/olsrd.conf
-	sudo cp conf/dhcpcd.conf /etc/dhcpcd.conf
 	sudo cp conf/dhcpd.conf /etc/dhcp/dhcpd.conf
 	sudo cp conf/interfaces /etc/network/interfaces
 	sudo cp conf/isc-dhcp-server /etc/default/isc-dhcp-server
